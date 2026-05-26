@@ -1,0 +1,2502 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MTV</title>
+<style>
+  :root {
+    --bg-primary:   #0a0e1a;
+    --bg-secondary: #0d1220;
+    --bg-card:      #111827;
+    --bg-hover:     #1a2235;
+    --bg-active:    #1d4ed8;
+    --bg-active-h:  #2563eb;
+    --text-primary: #f1f5f9;
+    --text-muted:   #64748b;
+    --text-sub:     #94a3b8;
+    --accent:       #3b82f6;
+    --accent-glow:  rgba(59,130,246,0.25);
+    --border:       #1e2d45;
+    --border-light: #253350;
+    --success:      #22c55e;
+    --warning:      #f59e0b;
+    --danger:       #ef4444;
+    --info:         #60a5fa;
+    --sidebar-w:    260px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif; background: var(--bg-primary); color: var(--text-primary); user-select: none; -webkit-tap-highlight-color: transparent; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+  #topbar {
+    position: fixed; top: 0; left: 0; right: 0; height: 48px; z-index: 100;
+    background: linear-gradient(180deg, #060b16 0%, rgba(6,11,22,0.95) 100%);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 16px; gap: 12px;
+  }
+  #topbar .logo { display: none; }
+  #url-input {
+    flex: 1; height: 34px; background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text-primary); font-size: 13px; padding: 0 12px;
+    outline: none; transition: border-color 0.2s;
+  }
+  #url-input::placeholder { color: var(--text-muted); }
+  #url-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+  .btn {
+    height: 34px; padding: 0 14px; border: none; border-radius: 6px;
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+  }
+  .btn-primary { background: var(--bg-active); color: #fff; }
+  .btn-primary:hover { background: var(--bg-active-h); }
+  .btn-ghost { background: var(--bg-card); color: var(--text-sub); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
+  #file-btn { position: relative; overflow: hidden; }
+  #file-btn input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  #settings-btn { font-size: 17px; padding: 0 10px; }
+  #main {
+    position: fixed; top: 48px; bottom: 0; left: 0; right: 0; display: flex;
+    transition: all 0.3s ease;
+  }
+  #main.sidebar-hidden #sidebar { display: none; }
+  #sidebar {
+    width: var(--sidebar-w); height: 100%; background: var(--bg-secondary);
+    border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden;
+  }
+  #group-nav {
+    flex-shrink: 0; padding: 8px 8px 0; display: flex; flex-wrap: wrap; gap: 4px;
+    border-bottom: 1px solid var(--border); padding-bottom: 8px; max-height: 110px; overflow-y: auto;
+  }
+  .group-tag {
+    padding: 3px 9px; border-radius: 4px; font-size: 12px; cursor: pointer;
+    background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border);
+    transition: all 0.15s; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 3px;
+  }
+  .group-tag:hover { background: var(--bg-hover); color: var(--text-sub); }
+  .group-tag.active { background: var(--bg-active); color: #fff; border-color: var(--bg-active); }
+  .group-tag.detecting { border-color: var(--warning); }
+  .gt-detect {
+    font-size: 10px; cursor: pointer; opacity: 0.35; line-height: 1;
+    padding: 0 2px; border-radius: 2px; transition: all 0.15s; flex-shrink: 0;
+  }
+  .gt-detect:hover { opacity: 1; background: rgba(59,130,246,0.25); }
+  .group-tag.detecting .gt-detect { opacity: 1; color: var(--warning); animation: pulse-dot 0.6s ease-in-out infinite; }
+  #channel-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+  .channel-item {
+    display: flex; align-items: center; padding: 7px 12px; cursor: pointer;
+    transition: background 0.12s; gap: 8px; position: relative;
+  }
+  .channel-item:hover { background: var(--bg-hover); }
+  .channel-item.active { background: var(--bg-active); }
+  .channel-item.active .ch-name { color: #fff; }
+  .ch-index { font-size: 11px; color: var(--text-muted); min-width: 24px; text-align: right; flex-shrink: 0; }
+  .channel-item.active .ch-index { color: rgba(255,255,255,0.6); }
+  .ch-name { font-size: 14px; color: var(--text-sub); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ch-fav { font-size: 13px; color: var(--text-muted); cursor: pointer; padding: 2px; flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
+  .channel-item:hover .ch-fav, .channel-item.active .ch-fav { opacity: 1; }
+  .ch-fav.is-fav { opacity: 1; color: var(--warning); }
+  .ch-lines { font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
+  .channel-item.active .ch-lines { color: rgba(255,255,255,0.5); }
+  /* 底部线路导航 */
+  #bottom-lines {
+    display: flex; align-items: center; gap: 6px; overflow-x: auto;
+    flex: 1; padding: 0 4px; min-width: 0;
+    scrollbar-width: none; -ms-overflow-style: none;
+  }
+  #bottom-lines::-webkit-scrollbar { display: none; }
+  .bottom-line-item {
+    padding: 3px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+    background: var(--bg-card); color: var(--text-sub); border: 1px solid var(--border);
+    transition: all 0.12s; white-space: nowrap; flex-shrink: 0;
+    display: flex; align-items: center; gap: 4px; line-height: 1.3;
+  }
+  .bottom-line-item:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-light); }
+  .bottom-line-item.active { background: var(--bg-active); color: #fff; border-color: var(--bg-active); }
+  .bottom-line-item.active .bl-speed { color: rgba(255,255,255,0.8); }
+  .bl-num { font-weight: 700; font-size: 12px; opacity: 0.7; }
+  .bottom-line-item.active .bl-num { opacity: 1; }
+  .bl-speed {
+    font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .bl-speed.ok { color: var(--success); }
+  .bl-speed.err { color: var(--danger); }
+  .bl-speed.fail { color: var(--info); }
+  .bl-speed.unknown { color: var(--text-muted); }
+  .bl-speed.testing { color: var(--warning); animation: pulse-dot 0.6s ease-in-out infinite; }
+  #player-area {
+    flex: 1; height: 100%; display: flex; flex-direction: column; overflow: hidden; position: relative; background: #000;
+  }
+  #video-wrap { flex: 1; position: relative; overflow: hidden; background: #000; }
+  #video-el { width: 100%; height: 100%; object-fit: contain; background: #000; display: block; }
+  #overlay {
+    position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.3s;
+  }
+  #overlay.show { opacity: 1; }
+  #overlay-tr {
+    position: absolute; top: 16px; right: 20px; display: flex; align-items: center; gap: 12px;
+  }
+  .ov-badge {
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 5px;
+    padding: 4px 10px; font-size: 14px; color: var(--text-primary);
+  }
+  #overlay-bl {
+    position: absolute; bottom: 20px; left: 20px;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 20px;
+  }
+  #ov-ch-name { font-size: 26px; font-weight: 700; color: #fff; line-height: 1.2; }
+  #ov-status { font-size: 13px; color: var(--text-sub); margin-top: 4px; display: flex; gap: 14px; }
+  .ov-dot-live { width: 7px; height: 7px; border-radius: 50%; background: var(--success); display: inline-block; animation: blink 1.5s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  #empty-state {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px; background: var(--bg-primary);
+  }
+  #empty-state .es-icon { font-size: 60px; opacity: 0.3; }
+  #empty-state .es-title { font-size: 18px; color: var(--text-muted); }
+  #empty-state .es-hint { font-size: 13px; color: var(--text-muted); opacity: 0.6; max-width: 320px; text-align: center; line-height: 1.6; }
+  #loading-mask {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.7);
+    display: none; align-items: center; justify-content: center; flex-direction: column; gap: 12px;
+  }
+  #loading-mask.show { display: flex; }
+  .spinner {
+    width: 40px; height: 40px; border: 3px solid rgba(59,130,246,0.2);
+    border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .loading-text { font-size: 13px; color: var(--text-sub); }
+  #info-bar {
+    flex-shrink: 0; height: 50px; background: var(--bg-secondary);
+    border-top: 1px solid var(--border); display: flex; align-items: center; padding: 0 16px; gap: 20px;
+  }
+  #info-ch-name { font-size: 15px; font-weight: 600; color: var(--text-primary); min-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .info-tag {
+    font-size: 12px; padding: 2px 7px; border-radius: 3px;
+    background: var(--bg-card); color: var(--text-sub); border: 1px solid var(--border); flex-shrink: 0;
+  }
+  .info-tag.live { border-color: var(--success); color: var(--success); }
+  .info-tag.err { border-color: var(--danger); color: var(--danger); }
+  #info-time { margin-left: auto; font-size: 13px; color: var(--text-muted); flex-shrink: 0; }
+  .info-sep { color: var(--border-light); }
+  #sidebar-toggle-bar {
+    width: 18px; height: 100%; flex-shrink: 0; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg-secondary); border-left: 1px solid var(--border);
+    transition: all 0.2s; user-select: none;
+  }
+  #sidebar-toggle-bar:hover { background: var(--bg-hover); }
+  #sidebar-toggle-arrow {
+    font-size: 12px; color: var(--text-muted); transition: transform 0.3s;
+  }
+  #main.sidebar-hidden #sidebar-toggle-arrow { transform: rotate(180deg); }
+  /* 视频覆盖层信息区 */
+  #player-bottom-bar {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 42px;
+    background: rgba(6,11,22,0.88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; padding: 0 8px; gap: 8px;
+    z-index: 20; transition: opacity 0.3s, transform 0.3s;
+  }
+  #player-bottom-bar.hidden { opacity: 0; transform: translateY(4px); pointer-events: none; }
+  #bottom-controls {
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+  }
+  /* 重试按钮 */
+  .bl-codec {
+    font-size: 9px; font-weight: 600; padding: 1px 4px; border-radius: 3px;
+    background: rgba(255,255,255,0.08); color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.3px;
+    flex-shrink: 0; line-height: 1.4;
+  }
+  .bl-codec.unsupported {
+    background: rgba(239,68,68,0.2); color: var(--danger);
+    text-decoration: line-through;
+  }
+  .bl-codec.ok { color: var(--success); background: rgba(34,197,94,0.15); }
+  /* 失败原因标签 */
+  .bl-reason {
+    font-size: 9px; padding: 1px 4px; border-radius: 3px;
+    background: rgba(96,165,250,0.15); color: var(--info);
+    flex-shrink: 0; line-height: 1.4; cursor: default;
+  }
+  /* 修复按钮 */
+  .bl-repair {
+    font-size: 12px; font-weight: 700; cursor: pointer; color: var(--success);
+    padding: 0 3px; border-radius: 3px; flex-shrink: 0;
+    transition: all 0.15s; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px;
+  }
+  .bl-repair:hover { background: rgba(34,197,94,0.2); color: #4ade80; transform: scale(1.2); }
+  .bottom-line-item.active .bl-repair { color: #fff; }
+  .bottom-line-item.active .bl-repair:hover { background: rgba(255,255,255,0.2); color: #fff; }
+  .ctrl-btn {
+    display: flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 4px;
+    border: 1px solid var(--border); background: var(--bg-card); color: var(--text-sub);
+    font-size: 12px; cursor: pointer; transition: all 0.15s;
+  }
+  .ctrl-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .ctrl-btn.active { border-color: var(--warning); color: var(--warning); }
+  #channel-count { font-size: 12px; color: var(--text-muted); }
+  #settings-panel {
+    position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center;
+  }
+  #settings-panel.show { display: flex; }
+  .settings-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; width: 460px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  }
+  .settings-box h2 { font-size: 16px; margin-bottom: 20px; color: var(--text-primary); display: flex; justify-content: space-between; align-items: center; }
+  .settings-box h2 button { background: none; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 0; }
+  .settings-box h2 button:hover { color: var(--text-primary); }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .form-group input, .form-group select {
+    width: 100%; height: 36px; background: var(--bg-secondary); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text-primary); font-size: 13px; padding: 0 10px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+  .form-group select option { background: var(--bg-card); }
+  .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.5; }
+  .settings-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-row span { font-size: 13px; color: var(--text-sub); }
+  .toggle { position: relative; width: 36px; height: 20px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; border-radius: 20px; background: var(--border-light); cursor: pointer; transition: background 0.2s; }
+  .toggle-slider::before { content:""; position:absolute; width:14px; height:14px; left:3px; top:3px; background:#fff; border-radius:50%; transition: transform 0.2s; }
+  .toggle input:checked + .toggle-slider { background: var(--accent); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+  #dial-toast {
+    position: fixed; bottom: 60px; right: 24px; z-index: 150;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+    border: 1px solid var(--accent); border-radius: 10px;
+    padding: 16px 24px; text-align: center;
+    opacity: 0; transform: translateY(10px); transition: all 0.2s; pointer-events: none;
+  }
+  #dial-toast.show { opacity: 1; transform: translateY(0); }
+  #dial-toast .dt-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  #dial-toast .dt-number { font-size: 36px; font-weight: 700; color: var(--accent); letter-spacing: 6px; font-variant-numeric: tabular-nums; }
+  #toast {
+    position: fixed; top: 66px; left: 50%; transform: translateX(-50%) translateY(-10px);
+    background: rgba(30,40,60,0.95); backdrop-filter: blur(8px);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 18px; font-size: 13px; color: var(--text-primary);
+    opacity: 0; pointer-events: none; transition: all 0.25s; z-index: 300; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast.success { border-color: var(--success); color: var(--success); }
+  #toast.error { border-color: var(--danger); color: var(--danger); }
+  #toast.warn { border-color: var(--warning); color: var(--warning); }
+  /* 频道线路状态指示区 */
+  .ch-status { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--border-light); transition: background 0.3s; margin-right: 2px; }
+  .ch-status.ok { background: var(--success); box-shadow: 0 0 5px rgba(34,197,94,0.4); }
+  .ch-status.err { background: var(--danger); }
+  .ch-status.fail { background: var(--info); box-shadow: 0 0 5px rgba(96,165,250,0.4); }
+  .ch-status.testing { background: var(--warning); animation: pulse-dot 0.6s ease-in-out infinite; }
+  @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* 线路检测状态 */
+  #detect-progress {
+    position: fixed; top: 56px; left: 50%; transform: translateX(-50%); z-index: 200;
+    background: rgba(17,24,39,0.95); border: 1px solid var(--border-light); border-radius: 8px;
+    padding: 8px 16px; font-size: 12px; color: var(--text-sub); pointer-events: none;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  #detect-progress.show { opacity: 1; }
+
+  /* 音量控制 */
+  #vol-group { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+  #mute-btn {
+    width: 28px; height: 28px; border-radius: 4px; border: 1px solid var(--border);
+    background: var(--bg-card); color: var(--text-sub); font-size: 15px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: all 0.15s; line-height: 1;
+  }
+  #mute-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+  #mute-btn.muted { color: var(--danger); }
+  #vol-slider {
+    width: 66px; height: 4px; -webkit-appearance: none; appearance: none;
+    background: var(--border); border-radius: 2px; outline: none; cursor: pointer;
+  }
+  #vol-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+    background: var(--accent); cursor: pointer; border: 2px solid var(--bg-card);
+  }
+  #vol-slider::-moz-range-thumb {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--accent); cursor: pointer; border: 2px solid var(--bg-card);
+  }
+
+  /* 下载/录制按钮 */
+  #download-btn {
+    background: none; border: 1px solid var(--border); color: var(--text-muted);
+    font-size: 12px; cursor: pointer; padding: 3px 10px; border-radius: 4px;
+    transition: all 0.15s; white-space: nowrap; display: flex; align-items: center;
+    gap: 5px; flex-shrink: 0;
+  }
+  #download-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+  #download-btn.recording {
+    background: var(--danger); color: #fff; border-color: var(--danger);
+    animation: pulse-dot 1s ease-in-out infinite;
+  }
+  #rec-dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; display: none; flex-shrink: 0; }
+  #download-btn.recording #rec-dot { display: inline-block !important; }
+  .recording-indicator {
+    position: absolute; top: 12px; right: 60px; z-index: 30; pointer-events: none;
+    display: none; align-items: center; gap: 6px;
+    background: rgba(239,68,68,0.9); color: #fff; font-size: 12px;
+    padding: 4px 10px; border-radius: 4px; font-weight: 600;
+  }
+  .recording-indicator.show { display: flex; }
+  .rec-dot-anim {
+    width: 8px; height: 8px; border-radius: 50%; background: #fff;
+    animation: pulse-dot 0.8s ease-in-out infinite;
+  }
+  #rec-timer { font-variant-numeric: tabular-nums; }
+  #dl-progress { font-size: 10px; opacity: 0.85; margin-left: 2px; }
+
+  /* ========== 响应式布局 ========== */
+
+  /* 平板 & 小屏 (<1024px) */
+  @media (max-width: 1024px) {
+    :root { --sidebar-w: 220px; }
+    #topbar { height: 44px; padding: 0 10px; gap: 8px; }
+    #main { top: 44px; }
+    #url-input { font-size: 12px; height: 30px; padding: 0 8px; }
+    .btn { height: 30px; padding: 0 10px; font-size: 12px; }
+    #info-bar { height: 46px; padding: 0 12px; gap: 10px; }
+    #info-ch-name { font-size: 14px; min-width: 100px; }
+    #player-bottom-bar { height: 36px; padding: 0 10px; gap: 8px; font-size: 11px; }
+    #bottom-controls { gap: 4px; }
+    .settings-box { width: 90vw; max-width: 420px; padding: 20px; }
+    #sidebar-toggle-bar { width: 22px; }
+    #sidebar-toggle-arrow { font-size: 14px; }
+    #vol-slider { width: 50px; }
+    #mute-btn { width: 26px; height: 26px; font-size: 13px; }
+  }
+
+  /* 手机竖屏 (<768px) 与 平板竖屏模式 */
+  @media (max-width: 768px) {
+    :root { --sidebar-w: 280px; }
+    html, body { -webkit-overflow-scrolling: touch; }
+
+    #topbar {
+      height: 42px; padding: 0 8px; gap: 6px;
+      background: rgba(6, 11, 22, 0.98);
+    }
+    #main { top: 42px; }
+    #url-input { font-size: 16px; height: 34px; }
+    .btn { height: 34px; padding: 0 10px; font-size: 14px; min-width: 44px; }
+    #file-btn { display: none; }
+    #detect-btn { display: none; }
+    #settings-btn { font-size: 20px; }
+
+    /* 频道列表全屏模式 */
+    #sidebar {
+      position: absolute !important; z-index: 50; left: 0; top: 0; bottom: 0;
+      width: var(--sidebar-w); height: 100%;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+      transform: translateX(-100%); transition: transform 0.25s ease;
+    }
+    #main.sidebar-visible #sidebar { transform: translateX(0); }
+    #main.sidebar-hidden #sidebar { transform: translateX(-100%); }
+    #main.sidebar-hidden #sidebar { display: flex !important; }
+
+    /* 移动端覆盖层 */
+    #mobile-overlay {
+      display: none; position: absolute; inset: 0; z-index: 45;
+      background: rgba(0,0,0,0.5);
+    }
+    #main.sidebar-visible #mobile-overlay { display: block; }
+
+    /* 移动端画中画按钮 */
+    #sidebar-toggle-bar {
+      position: absolute; z-index: 55; left: 0; top: 50%;
+      transform: translateY(-50%);
+      width: 28px; height: 56px; border-radius: 0 6px 6px 0;
+      background: rgba(13,18,32,0.9); border: 1px solid var(--border);
+      border-left: none;
+    }
+    #main.sidebar-visible #sidebar-toggle-bar {
+      left: calc(var(--sidebar-w) - 1px);
+      border-left: 1px solid var(--border); border-radius: 6px 0 0 6px;
+      border-right: none;
+    }
+    #sidebar-toggle-arrow { font-size: 15px; }
+
+    /* 音量全宽 */
+    #player-area { width: 100% !important; }
+
+    /* 第息重试共 */
+    #info-bar {
+      height: 44px; padding: 0 8px 0 36px; gap: 8px;
+    }
+    #info-ch-name { font-size: 13px; min-width: 60px; max-width: 120px; }
+    .info-tag { font-size: 11px; }
+    #info-time { font-size: 11px; }
+
+    /* 第共 */
+    #player-bottom-bar { height: 36px; padding: 0 8px; gap: 4px; }
+    #digit-display { display: none; }
+    #channel-count { display: none; }
+    .ctrl-btn { padding: 4px 12px; font-size: 13px; min-height: 30px; }
+    .bottom-line-item { padding: 3px 8px; font-size: 11px; }
+
+    /* 频道列表项 */
+    .channel-item { padding: 10px 12px; }
+    .ch-name { font-size: 15px; }
+    .group-tag { padding: 5px 10px; font-size: 13px; }
+
+    /* 设置面板 */
+    #toast { top: 56px; max-width: 90vw; font-size: 13px; }
+    #dial-toast { bottom: 56px; right: 12px; padding: 12px 18px; }
+    #dial-toast .dt-number { font-size: 28px; }
+    #settings-panel { align-items: flex-end; }
+    .settings-box {
+      width: 100%; max-width: 100%; border-radius: 16px 16px 0 0;
+      padding: 20px 16px 32px; max-height: 85vh; overflow-y: auto;
+    }
+    .form-group input, .form-group select { font-size: 16px; }
+
+    /* 数字选台器 */
+    #overlay-bl { left: 12px; bottom: 12px; padding: 10px 16px; border-radius: 8px; }
+    #ov-ch-name { font-size: 20px; }
+    #overlay-tr { top: 10px; right: 12px; gap: 8px; }
+    .ov-badge { font-size: 12px; padding: 3px 8px; }
+
+    /* 移动端下载 */
+    #vol-group { gap: 4px; }
+    #vol-slider { width: 50px; }
+    #mute-btn { width: 26px; height: 26px; font-size: 13px; }
+
+    /* 移动端录制 */
+    .recording-indicator { top: 8px; right: 50px; font-size: 11px; padding: 3px 8px; }
+    #download-btn { font-size: 11px; padding: 2px 7px; }
+  }
+
+  /* 小屏手机 (<400px) */
+  @media (max-width: 400px) {
+    :root { --sidebar-w: 260px; }
+    #info-ch-name { max-width: 80px; }
+    #overlay-bl { left: 8px; bottom: 8px; padding: 8px 12px; }
+    #ov-ch-name { font-size: 17px; }
+    .ctrl-btn { padding: 4px 8px; font-size: 12px; }
+  }
+
+  /* 大屏桌面 (>1600px) */
+  @media (min-width: 1600px) {
+    :root { --sidebar-w: 300px; }
+    #ov-ch-name { font-size: 30px; }
+    #overlay-bl { bottom: 30px; left: 30px; }
+  }
+
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <input id="url-input" type="text" placeholder="输入直播源 URL，支持 M3U/TXT/TVbox 格式，也可以粘贴单个视频地址" spellcheck="false">
+  <button class="btn btn-primary" onclick="loadFromUrl()">加载</button>
+  <button class="btn btn-ghost" id="file-btn">打开文件 <input type="file" accept=".m3u,.m3u8,.txt" onchange="loadFromFile(event)"></button>
+  <button class="btn btn-ghost" id="detect-btn" onclick="testAllChannels()" title="检测所有频道的线路状态">检测</button>
+  <button class="btn btn-ghost" id="settings-btn" onclick="openSettings()" title="设置">重试</button>
+</div>
+
+<div id="main">
+  <div id="sidebar">
+    <div id="group-nav"></div>
+    <div id="channel-list">
+      <div style="padding:40px 16px;text-align:center;color:var(--text-muted);font-size:13px;line-height:1.8">
+        第锟饺硷拷共 M3U 重试源<br>第锟较达拷第共 .m3u 锟侥硷拷
+      </div>
+    </div>
+  </div>
+  <div id="sidebar-toggle-bar" onclick="toggleSidebar()" title="收起频道列表">
+    <span id="sidebar-toggle-arrow">?</span>
+  </div>
+  <div id="mobile-overlay" onclick="toggleSidebar()"></div>
+  <div id="player-area">
+    <div id="video-wrap">
+      <video id="video-el" crossorigin="anonymous" playsinline webkit-playsinline></video>
+      <div id="empty-state">
+        <div class="es-icon">..</div>
+        <div class="es-title">欢迎使用 MTV</div>
+        <div class="es-hint">点击左上角加载按钮，或粘贴一个 M3U 直播源链接开始使用</div>
+      </div>
+      <div id="loading-mask">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loading-text">正在加载频道...</div>
+      </div>
+      <div id="overlay">
+        <div id="overlay-tr">
+          <span class="ov-badge" id="ov-ch-num">--</span>
+          <span class="ov-badge" id="ov-time">--:--</span>
+        </div>
+        <div id="overlay-bl">
+          <div id="ov-ch-name">第选个频道</div>
+          <div id="ov-status">
+            <span><span class="ov-dot-live"></span> 直播</span>
+            <span id="ov-line">线路 -/-</span>
+          </div>
+        </div>
+      </div>
+      <div class="recording-indicator" id="rec-indicator">
+        <span class="rec-dot-anim"></span><span>录制中</span><span id="rec-timer">00:00</span><span id="dl-progress"></span>
+      </div>
+      <div id="player-bottom-bar">
+        <div id="bottom-lines"></div>
+        <div id="bottom-controls">
+          <button class="ctrl-btn" id="fav-btn" onclick="toggleFavorite()" title="收藏 (F)">收藏</button>
+          <button class="ctrl-btn" onclick="toggleFullscreen()" title="全屏">全屏</button>
+          <button class="ctrl-btn" onclick="togglePip()" title="画中画">画中画</button>
+          <span id="channel-count"></span>
+        </div>
+      </div>
+    </div>
+    <div id="info-bar">
+      <span id="info-ch-name">--</span>
+      <span class="info-tag" id="status-tag">就绪</span>
+      <span class="info-sep">|</span>
+      <div id="vol-group">
+        <button id="mute-btn" onclick="toggleMute()" title="重试/取播放中">&#x1F50A;</button>
+        <input type="range" id="vol-slider" min="0" max="100" value="100" oninput="setVolume(this.value)" title="重试">
+      </div>
+      <span class="info-sep">|</span>
+      <button id="download-btn" onclick="toggleDownload()" title="下载HLS分片为TS文件">
+        <span id="rec-dot"></span>下载
+      </button>
+      <span id="info-time" style="margin-left:auto">--:--:--</span>
+    </div>
+  </div>
+</div>
+
+<div id="dial-toast">
+  <div class="dt-label">数字选台</div>
+  <div class="dt-number" id="dial-number">--</div>
+</div>
+
+<div id="toast"></div>
+
+<div id="detect-progress"></div>
+
+<div id="settings-panel">
+  <div class="settings-box">
+    <h2>设置 <button onclick="closeSettings()">X</button></h2>
+    <div class="form-group">
+      <label>M3U 直播源 URL（可多个换行）</label>
+      <input type="text" id="cfg-url" placeholder="http://xxx.com/live.m3u">
+    </div>
+    <div class="form-group">
+      <label>CORS 代理地址（如无需代理可留空，双击 start.bat 即可生效）</label>
+      <input type="text" id="cfg-proxy" placeholder="http://127.0.0.1:8799/?url=">
+      <div class="form-hint">锟狡硷拷第双共 start.bat 锟皆讹拷播放中锟截达拷第<br>播放中址第锟皆讹拷第为 http://127.0.0.1:8799/?url=</div>
+    </div>
+    <div class="form-group">
+      <label>视频缩放模式</label>
+      <select id="cfg-fit">
+        <option value="contain">contain（留边，保持比例）</option>
+        <option value="cover">cover（填满，可能裁剪）</option>
+        <option value="fill">fill（拉伸填满）</option>
+      </select>
+    </div>
+    <div class="toggle-row">
+      <span>播放失败时自动切换下一条线路</span>
+      <label class="toggle"><input type="checkbox" id="cfg-autoswitch" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span>记住上次播放的频道</span>
+      <label class="toggle"><input type="checkbox" id="cfg-remember" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="settings-actions">
+      <button class="btn btn-ghost" onclick="closeSettings()">取第</button>
+      <button class="btn btn-primary" onclick="saveSettings()">第锟芥并锟截憋拷</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.20/dist/hls.min.js"></script>
+<script>
+
+/* ================================================================
+   锟揭的碉拷共 MyTV - IPTV重试共 JS重试
+   ================================================================ */
+var state = {
+  groups: [], allChannels: [],
+  curGroupIdx: 0, curChanIdx: -1, curLineIdx: 0,
+  favorites: new Set(),
+  digitBuf: "", digitTimer: null, overlayTimer: null,
+  hls: null, loadingTimer: null, playTimeout: null, videoCheckTimer: null, hevcWarned: null,
+  cfg: { url: "", proxy: "", fit: "contain", autoswitch: true, remember: true },
+  channelStatus: {},  // { "group|name": { lines: [{ok, latency, testing, playFailed}, ...] } }
+  detectingGroupIdx: undefined,  // 正在检测的分组索引, undefined=全部
+  volume: 1, isMuted: false,
+  // 下载双模式: HLS分片下载 / 直播录制
+  dlActive: false,         // 下载进行中
+  dlMode: "",              // 'hls' | 'direct'
+  dlAborter: null,         // AbortController
+  dlChunks: [],            // 下载数据块 (HLS: [{url,data}], direct: [Uint8Array])
+  dlTotalSegments: 0,      // 总分段数 (HLS)
+  dlDownloadedSegments: 0, // 已下载分段数 (HLS)
+  dlFailedSegments: 0,    // 下载失败的分段数 (HLS)
+  dlDownloadedSize: 0,     // 已下载字节数 (direct)
+  dlStartTime: null,       // 开始时间
+  dlTimerId: null,         // 计时器ID
+  dlPollTimerId: null,     // 直播轮询定时器ID
+  dlSeenUrls: null,        // 已见分段URL去重
+  dlM3u8Url: "",           // 当前m3u8 URL
+  dlProxyBase: "",         // 下载代理基础URL (如 http://127.0.0.1:8799/?url=)
+  dlContentType: "",       // 响应 Content-Type (direct模式)
+  // Canvas+AudioContext 录制 (record模式, 非HLS)
+  dlMediaRecorder: null,  // MediaRecorder 实例
+  dlRecCanvas: null,      // 隐藏 Canvas 元素
+  dlRecCanvasCtx: null,   // Canvas 2D 上下文
+  dlAudioCtx: null,       // AudioContext
+  dlAudioSrc: null,       // MediaElementAudioSourceNode
+  dlAudioDest: null,      // MediaStreamAudioDestinationNode
+  dlVidCallbackId: null,  // requestVideoFrameCallback ID
+  dlRecordedBlob: null,   // 录制完成后的 Blob
+  dlRecordInterval: null, // Canvas 绘制间隔 timer
+  lastErrorInfo: null,    // { type, detail, timestamp } 最后一次错误信息
+  repairStrategy: null    // 修复策略: 'relaxed'|'native'|'retry'|null
+};
+var $ = function(id) { return document.getElementById(id); };
+var videoEl = $("video-el");
+
+/* ---------- 配置持久化 ---------- */
+function loadConfig() {
+  try { var s = localStorage.getItem("mytv_config"); if (s) Object.assign(state.cfg, JSON.parse(s)); } catch(e) {}
+  $("cfg-url").value = state.cfg.url; $("cfg-proxy").value = state.cfg.proxy;
+  $("cfg-fit").value = state.cfg.fit; $("cfg-autoswitch").checked = state.cfg.autoswitch;
+  $("cfg-remember").checked = state.cfg.remember;
+  if (state.cfg.url) $("url-input").value = state.cfg.url;
+  videoEl.style.objectFit = state.cfg.fit;
+}
+function saveSettings() {
+  state.cfg.url = $("cfg-url").value.trim(); state.cfg.proxy = $("cfg-proxy").value.trim();
+  state.cfg.fit = $("cfg-fit").value; state.cfg.autoswitch = $("cfg-autoswitch").checked;
+  state.cfg.remember = $("cfg-remember").checked;
+  localStorage.setItem("mytv_config", JSON.stringify(state.cfg));
+  if (state.cfg.url) $("url-input").value = state.cfg.url;
+  videoEl.style.objectFit = state.cfg.fit;
+  closeSettings(); showToast("设置已保存", "success");
+}
+function openSettings() {
+  $("cfg-url").value = state.cfg.url; $("cfg-proxy").value = state.cfg.proxy;
+  $("cfg-fit").value = state.cfg.fit; $("cfg-autoswitch").checked = state.cfg.autoswitch;
+  $("cfg-remember").checked = state.cfg.remember;
+  $("settings-panel").classList.add("show");
+}
+function closeSettings() { $("settings-panel").classList.remove("show"); }
+
+/* ---------- 收藏 ---------- */
+function loadFavorites() {
+  try { var f = localStorage.getItem("mytv_favorites"); if (f) state.favorites = new Set(JSON.parse(f)); } catch(e) {}
+}
+function saveFavorites() { localStorage.setItem("mytv_favorites", JSON.stringify([].slice.call(state.favorites))); }
+
+/* ---------- M3U / TVbox / TXT 解析 ---------- */
+function parseIPTV(text) {
+  text = text.trim();
+  // 锟狡筹拷 BOM 头
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  // 全锟角讹拷第统一转检测
+  text = text.replace(/\uff0c/g, ",");
+  // 检测 M3U 第式
+  if (text.includes("#EXTM3U") || text.includes("#EXTINF")) return parseM3UFormat(text);
+  // 检测 TXT/TVbox 第式第#genre# 重试共 共 第锟脚分革拷 共 锟杰碉拷第锟街革拷第
+  if (text.includes("#genre#") || isTxtFormat(text)) return parseTxtFormat(text);
+  // 第锟阶ｏ拷锟饺筹拷第TXT锟劫筹拷第M3U
+  var r = parseTxtFormat(text);
+  return r.length ? r : parseM3UFormat(text);
+}
+
+/* 锟叫讹拷锟角凤拷为 TXT 第式个频道第,URL 共 频重试|URL 模式共 */
+function isTxtFormat(text) {
+  var lines = text.split("\n"), commaCount = 0, pipeCount = 0, total = 0;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line || line.startsWith("#")) continue;
+    total++;
+    if (line.indexOf(",") > 0 && !line.match(/^https?:\/\//)) commaCount++;
+    if (line.indexOf("|") > 0 && !line.match(/^https?:\/\//)) pipeCount++;
+  }
+  // 如果30%以上行含逗号或管道符，判定为 TXT格式
+  return total > 0 && ((commaCount + pipeCount) / total > 0.3);
+}
+
+/* M3U 第准第式第共 */
+function parseM3UFormat(text) {
+  var lines = text.split("\n"), groupMap = {}, curInfo = null;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim(); if (!line) continue;
+    if (line.startsWith("#EXTINF")) {
+      var gm = line.match(/group-title\s*=\s*"([^"]*)"/i);
+      var tm = line.match(/tvg-name\s*=\s*"([^"]*)"/i);
+      var nm = line.match(/,\s*(.+?)\s*$/);
+      curInfo = { group: (gm ? gm[1].trim() : "未重试") || "未重试", name: (tm ? tm[1].trim() : (nm ? nm[1].trim() : "未知频第")) || "未知频第" };
+    } else if (!line.startsWith("#") && isStreamUrl(line)) {
+      if (curInfo) {
+        if (!groupMap[curInfo.group]) groupMap[curInfo.group] = {};
+        if (!groupMap[curInfo.group][curInfo.name]) groupMap[curInfo.group][curInfo.name] = [];
+        groupMap[curInfo.group][curInfo.name].push(line);
+        curInfo = null;
+      }
+    }
+  }
+  return buildGroups(groupMap);
+}
+
+/* TXT/TVbox 第式重试个频道第,URL 共 频重试|URL共 */
+function parseTxtFormat(text) {
+  var lines = text.split("\n"), groupMap = {}, curGroup = "未重试";
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
+    // 播放中注重试
+    if (line.startsWith("#") && !line.includes("#genre#") && !line.startsWith("#EXTINF")) continue;
+
+    // #genre# 播放中
+    if (line.endsWith(",#genre#") || line === "#genre#") {
+      curGroup = line.replace(",#genre#", "").replace("#genre#", "").trim() || "未重试";
+      continue;
+    }
+
+    // 播放中第锟叫ｏ拷锟睫讹拷锟脚★拷第URL重试注锟酵★拷第#genre#第
+    // 锟叫讹拷播放中锟睫讹拷锟脚★拷锟睫管碉拷播放中重试URL重试一第个频道第
+    if (line.indexOf(",") === -1 && line.indexOf("|") === -1 && !isStreamUrl(line) && !line.startsWith("#")) {
+      if (i + 1 < lines.length) {
+        var nextLine = lines[i + 1].trim();
+        if (nextLine && (nextLine.indexOf(",") > 0 || nextLine.indexOf("|") > 0)) {
+          curGroup = line;
+          continue;
+        }
+      }
+      continue;
+    }
+
+    // 频道名:URL 支持管道符分隔
+    var sep = line.indexOf(",") > 0 ? "," : (line.indexOf("|") > 0 ? "|" : null);
+    if (!sep) continue;
+    var ci = line.indexOf(sep);
+    var name = line.substring(0, ci).trim();
+    var urlPart = line.substring(ci + 1).trim();
+    if (!name || !urlPart) continue;
+
+    // 播放中锟铰凤拷检测 # 锟街革拷第
+    var rawUrls = urlPart.split("#");
+    var urls = [];
+    for (var u = 0; u < rawUrls.length; u++) {
+      var raw = rawUrls[u].trim();
+      if (isStreamUrl(raw)) urls.push(raw);
+    }
+    if (!urls.length) continue;
+
+    if (!groupMap[curGroup]) groupMap[curGroup] = {};
+    if (!groupMap[curGroup][name]) groupMap[curGroup][name] = [];
+    for (var ui = 0; ui < urls.length; ui++) {
+      groupMap[curGroup][name].push(urls[ui]);
+    }
+  }
+  return buildGroups(groupMap);
+}
+
+/* 锟叫讹拷锟角凤拷重试媒第URL */
+function isStreamUrl(s) {
+  return /^(https?|rtsp|rtp|rtmp|p2p|mitv|tvbus|qsp|flv|mms|mmsh)\s*:\/\//i.test(s) ||
+         s.startsWith("http") || s.startsWith("rtsp") || s.startsWith("rtp");
+}
+
+function buildGroups(groupMap) {
+  var groups = [], gIdx = 0;
+  for (var gn in groupMap) {
+    if (!groupMap.hasOwnProperty(gn)) continue;
+    var chans = [], chanMap = groupMap[gn];
+    for (var cn in chanMap) {
+      if (!chanMap.hasOwnProperty(cn)) continue;
+      gIdx++;
+      chans.push({ name: cn, urls: chanMap[cn], index: gIdx, group: gn });
+    }
+    if (chans.length) groups.push({ name: gn, channels: chans });
+  }
+  // 播放中播放中确第"第个频道"第前
+  groups.sort(function(a, b) {
+    if (a.name === "第个频道") return -1;
+    if (b.name === "第个频道") return 1;
+    if (a.name === "第个频道") return -1;
+    if (b.name === "第个频道") return 1;
+    return a.name.localeCompare(b.name, "zh-CN");
+  });
+  return groups;
+}
+
+/* ---------- 直播源加载 ---------- */
+function loadFromUrl() {
+  var url = $("url-input").value.trim();
+  if (!url) { showToast("播放中直播源 URL", "warn"); return; }
+  showLoading(true, "第锟节硷拷第检测...");
+  tryFetch(url);
+}
+
+/* 统一第锟截ｏ拷锟饺硷拷獗撅拷卮检测 共 重试模式 共 直播第共 */
+function tryFetch(url) {
+  // 锟饺硷拷锟経RL锟角凤拷播放中直播个频道
+  if (/\.(m3u8|ts|mp4|flv)(\?|$|#)/i.test(url)) {
+    processStreamUrl(url);
+    return;
+  }
+
+  // 文件URL可能包含单个视频
+  checkProxy().then(function(proxyBase) {
+    if (proxyBase) {
+      // 第式1: 通重试锟截达拷第
+      showLoading(true, "第锟截达拷播放中第...");
+      var fetchUrl = proxyBase + encodeURIComponent(url);
+      return fetch(fetchUrl, { cache: "no-cache", signal: AbortSignal.timeout(25000) })
+        .then(function(r) {
+          if (!r.ok) throw new Error("播放中共 HTTP " + r.status);
+          return r.text();
+        })
+        .then(function(text) {
+          processM3U(text, url);
+        })
+        .catch(function(proxyErr) {
+          // 重试失共 共 第锟剿碉拷直播
+          showLoading(true, "播放中第锟矫ｏ拷重试直播...");
+          return fetchDirect(url);
+        });
+    } else {
+      // 第式2: 锟睫达拷重试直播重试
+      showLoading(true, "直播播放中...");
+      return fetchDirect(url);
+    }
+  }).catch(function(finalErr) {
+    showLoading(false);
+    var msg = (finalErr && finalErr.message) || "";
+    if (msg.indexOf("Failed to fetch") >= 0 || msg.indexOf("NetworkError") >= 0) {
+      showToast("加载失败，请确认: 1)URL可访问 2)已双击start.bat启动代理", "error");
+    } else if (msg.indexOf("HTTP 502") >= 0) {
+      showToast("服务器返回502，可能超时，请稍后重试或更换URL", "error");
+    } else {
+      showToast("加载失败: " + msg + "，也可以直接打开本地文件", "error");
+    }
+  });
+}
+
+/* 第獗撅拷卮播放中第锟剿口筹拷锟皆ｏ拷 */
+function checkProxy() {
+  var ports = [8799, 8800, 8801, 8802];
+  function tryPort(idx) {
+    if (idx >= ports.length) return Promise.resolve(null);
+    var healthUrl = "http://127.0.0.1:" + ports[idx] + "/health";
+    return fetch(healthUrl, { mode: "cors", cache: "no-cache", signal: AbortSignal.timeout(2000) })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        return (d && d.status === "ok") ? ("http://127.0.0.1:" + ports[idx] + "/?url=") : tryPort(idx + 1);
+      })
+      .catch(function() { return tryPort(idx + 1); });
+  }
+  return tryPort(0);
+}
+
+/* 直播第共 */
+function fetchDirect(url) {
+  return fetch(url, { cache: "no-cache", signal: AbortSignal.timeout(20000) })
+    .then(function(r) {
+      if (!r.ok) throw new Error("直播 HTTP " + r.status);
+      return r.text();
+    })
+    .then(function(text) {
+      processM3U(text, url);
+    })
+    .catch(function(err) {
+      var msg = (err && err.message) || "";
+      if (msg.indexOf("Failed to fetch") >= 0 || msg.indexOf("NetworkError") >= 0) {
+        throw new Error("直播播放中第检测(CORS)重试双第start.bat播放中锟截达拷第");
+      }
+      throw err;
+    });
+}
+function loadFromFile(ev) {
+  var file = ev.target.files[0]; if (!file) return;
+  showLoading(true, "第锟节讹拷取 " + file.name + "...");
+  var reader = new FileReader();
+  reader.onload = function(e) { processM3U(e.target.result, file.name); ev.target.value = ""; };
+  reader.onerror = function() { showLoading(false); showToast("锟侥硷拷第取失第", "error"); };
+  reader.readAsText(file, "UTF-8");
+}
+
+/* 直播个频道第址第共 (m3u8/ts/mp4/flv第) */
+function processStreamUrl(url) {
+  var name = url.split("/").pop().split("?")[0] || "直播第";
+  var nm = url.match(/[?&]name=([^&]+)/i);
+  if (nm) name = decodeURIComponent(nm[1]);
+  state.groups = [{ name: "直锟接诧拷第", channels: [{ name: name, urls: [url], index: 1, group: "直锟接诧拷第" }] }];
+  state.allChannels = state.groups[0].channels;
+  state.curGroupIdx = 0; state.curChanIdx = 0; state.curLineIdx = 0;
+  try { localStorage.setItem("mytv_lasturl", url); } catch(e) {}
+  showLoading(false); renderSidebar();
+  playChannelByGlobalIdx(0);
+  showToast("直连: " + name, "success");
+}
+
+function processM3U(text, sourceName) {
+  // 重试欠锟轿狧LS媒第锟藉单第个频道锟叫憋拷第
+  if (text.indexOf("#EXT-X-STREAM-INF") >= 0 || text.indexOf("#EXT-X-TARGETDURATION") >= 0) {
+    showLoading(false);
+    var url = $("url-input").value.trim() || sourceName;
+    if (url && /^https?:\/\//.test(url)) {
+      processStreamUrl(url);
+    } else {
+      showToast("第獾紿LS第媒第锟藉单第锟诫将第URL直播粘播放中播放中", "warn");
+    }
+    return;
+  }
+  var groups = parseIPTV(text);
+  if (!groups.length) { showLoading(false); showToast("未播放中锟轿猴拷频重试支锟街革拷式: M3U(#EXTINF)第TXT(频重试,URL)第TVbox(#genre#)重试锟経RL播放中直播个频道 / 第要播放中第", "error"); return; }
+  state.groups = groups;
+  state.allChannels = groups.reduce(function(a, g) { return a.concat(g.channels); }, []);
+  state.curGroupIdx = 0; state.curChanIdx = -1; state.curLineIdx = 0;
+  try { localStorage.setItem("mytv_lasturl", $("url-input").value || sourceName); } catch(e) {}
+  showLoading(false); renderSidebar();
+  var rawUrl = $("url-input").value.trim();
+  if (rawUrl) { state.cfg.url = rawUrl; localStorage.setItem("mytv_config", JSON.stringify(state.cfg)); }
+  showToast("加载成功: " + groups.length + "  个分组, 共 " + state.allChannels.length + " 个频道", "success");
+  if (state.cfg.remember) restoreLastChannel();
+}
+
+/* ---------- 侧边栏渲染 ---------- */
+function renderSidebar() { renderGroupNav(); renderChannelList(); $("channel-count").textContent = "共 " + state.allChannels.length + " 个频道"; }
+function renderGroupNav() {
+  var nav = $("group-nav"), html = "";
+  html += '<div class="group-tag' + (state.curGroupIdx === -1 ? " active" : "") + '" onclick="selectGroup(-1)">* 收藏</div>';
+  state.groups.forEach(function(g, i) {
+    var isDetecting = state.detectingGroupIdx === i;
+    html += '<div class="group-tag' + (state.curGroupIdx === i ? " active" : "") + (isDetecting ? " detecting" : "") + '" onclick="selectGroup(' + i + ')">' +
+      escHtml(g.name) +
+      '<span class="gt-detect" onclick="event.stopPropagation();testGroupChannels(' + i + ')" title="检测该分组">?</span>' +
+      '</div>';
+  });
+  nav.innerHTML = html;
+}
+function selectGroup(idx) { state.curGroupIdx = idx; renderGroupNav(); renderChannelList(); }
+function getCurChans() {
+  if (state.curGroupIdx === -1) return state.allChannels.filter(function(c) { return state.favorites.has(c.name); });
+  return (state.groups[state.curGroupIdx] && state.groups[state.curGroupIdx].channels) || [];
+}
+function renderChannelList() {
+  var list = $("channel-list"), chans = getCurChans();
+  if (!chans.length) {
+    list.innerHTML = '<div style="padding:30px 16px;text-align:center;color:var(--text-muted);font-size:13px">' +
+      (state.curGroupIdx === -1 ? "重试收藏频重试共 F 已收藏" : "锟矫凤拷重试个频道") + '</div>'; return;
+  }
+  var html = "";
+  chans.forEach(function(ch, li) {
+    var gi = state.allChannels.indexOf(ch), isActiveGroup = gi === state.curChanIdx;
+    var isFav = state.favorites.has(ch.name);
+    var sKey = ch.group + "|" + ch.name, st = state.channelStatus[sKey];
+    // 频播放中状态第
+    var sumCls = getChSummaryCls(st);
+    html += '<div class="channel-item' + (isActiveGroup ? " active" : "") + '" data-gidx="' + gi + '" onclick="playChannelByGlobalIdx(' + gi + ')">' +
+      '<span class="ch-status' + sumCls + '" title="' + (sumCls === " ok" ? "锟叫匡拷条线路" : sumCls === " err" ? "全第失第" : sumCls === " testing" ? "第检测" : "未检测") + '"></span>' +
+      '<span class="ch-index">' + ch.index + '</span>' +
+      '<span class="ch-name">' + escHtml(ch.name) + '</span>' +
+      '<span class="ch-fav' + (isFav ? " is-fav" : "") + '" onclick="event.stopPropagation();toggleFavoriteByName(\'' + escAttr(ch.name) + '\')">' + (isFav ? "*" : "+") + '</span>' +
+      '</div>';
+  });
+  list.innerHTML = html;
+  // 播放中第前第
+  var curLi = chans.findIndex(function(c) { return state.allChannels.indexOf(c) === state.curChanIdx; });
+  if (curLi !== -1) {
+    var items = list.querySelectorAll(".channel-item");
+    if (items[curLi]) items[curLi].scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+}
+/* 频播放中状态重试一线路锟缴诧拷第共 / 条线路第锟接成癸拷第全重试失锟杰★拷共 / 全失锟杰★拷共 / 重试小检测 / 未重试共 */
+function getChSummaryCls(st) {
+  if (!st || !st.lines || !st.lines.length) return "";
+  var anyOk = false, allDone = true, anyTesting = false, anyFailed = false, anyReachable = false, anyPlayFailed = false;
+  for (var i = 0; i < st.lines.length; i++) {
+    var s = st.lines[i];
+    if (s.ok === true && !s.playFailed) anyOk = true;
+    if (s.ok === true) anyReachable = true;
+    if (s.ok === true && s.playFailed) anyPlayFailed = true;
+    if (s.ok === false) anyFailed = true;
+    if (s.testing) anyTesting = true;
+    if (!s.hasOwnProperty("ok") && !s.testing) allDone = false;
+  }
+  if (anyTesting) return " testing";
+  if (anyOk) return " ok";
+  // 没有可用线路则标记为失败状态
+  if (anyPlayFailed && allDone) return " fail";
+  if (anyFailed && !anyReachable && allDone) return " err";
+  return "";
+}
+
+/* 锟阶诧拷线路播放中第染 */
+function renderBottomLines() {
+  var container = $("bottom-lines");
+  if (state.curChanIdx < 0 || !state.allChannels.length) { container.innerHTML = ""; return; }
+  var ch = state.allChannels[state.curChanIdx];
+  if (!ch || ch.urls.length <= 1) { container.innerHTML = ""; return; }
+  var sKey = ch.group + "|" + ch.name, st = state.channelStatus[sKey];
+  var html = "";
+  for (var i = 0; i < ch.urls.length; i++) {
+    var ls = (st && st.lines && st.lines[i]) || {};
+    var isCur = i === state.curLineIdx;
+    var speedText, speedCls;
+    if (ls.playFailed)     { speedText = ls.latency ? ls.latency + "ms" : "--"; speedCls = "fail"; }
+    else if (ls.ok === true)   { speedText = ls.latency + "ms"; speedCls = "ok"; }
+    else if (ls.ok === false)  { speedText = "X"; speedCls = "err"; }
+    else if (ls.testing)       { speedText = "..."; speedCls = "testing"; }
+    else                       { speedText = "?"; speedCls = "unknown"; }
+    // 重试按钮
+    var codecHtml = "";
+    if (ls.codec) {
+      var cl = getCodecLabel(ls.codec);
+      var unsup = ls.codecUnsupported;
+      codecHtml = '<span class="bl-codec' + (unsup ? ' unsupported' : '') + '" title="' + escAttr(ls.codec + (unsup ? ' (当前浏览器不支持)' : '')) + '">' + escHtml(cl) + '</span>';
+    }
+    // 失败原因标签 + 修复按钮
+    var failInfo = "";
+    var chIdx = state.curChanIdx;
+    if (ls.playFailed && ls.failReason) {
+      var reasonLabel = getRepairLabel(ls.failReason);
+      var rc = ls.repairCount || 0;
+      failInfo = '<span class="bl-reason" title="' + escAttr("失第原第: " + reasonLabel + (ls.failDetail ? " (" + ls.failDetail + ")" : "") + " | 锟窖筹拷第锟睫革拷" + rc + "第") + '">' + escHtml(reasonLabel) + '</span>';
+      if (rc < 3) {
+        failInfo += '<span class="bl-repair" onclick="event.stopPropagation();manualRepairLine(' + chIdx + ',' + i + ')" title="重试修复中第锟铰诧拷第">?</span>';
+      }
+    }
+    html += '<div class="bottom-line-item' + (isCur ? " active" : "") + '" onclick="playLineByGlobalIdx(' + state.curChanIdx + ',' + i + ')">' +
+      '<span class="bl-num">' + (i + 1) + '</span>' +
+      '<span class="bl-speed ' + speedCls + '">' + speedText + '</span>' +
+      codecHtml +
+      failInfo +
+      '</div>';
+  }
+  container.innerHTML = html;
+}
+
+/* ---------- 频道线路检测 ---------- */
+var detectAborted = false;
+var detectRunning = false;
+
+/* 全部频道检测（检测按钮触发） */
+function testAllChannels() {
+  if (detectRunning) {
+    detectAborted = true; showToast("已停止检测...", "warn"); return;
+  }
+  if (!state.allChannels.length) { showToast("第锟饺硷拷第直播源", "warn"); return; }
+  startDetection(state.allChannels, "全个频道", undefined);
+}
+
+/* 分组检测（分组标签 ? 按钮触发 */
+function testGroupChannels(groupIdx) {
+  if (detectRunning) { showToast("请先停止当前检测任务", "warn"); return; }
+  if (groupIdx < 0 || groupIdx >= state.groups.length) return;
+  var chans = state.groups[groupIdx].channels;
+  if (!chans.length) { showToast("锟矫凤拷第个频道", "warn"); return; }
+  startDetection(chans, state.groups[groupIdx].name, groupIdx);
+}
+
+/* 通锟矫硷拷第检测 */
+function startDetection(channels, label, groupIdx) {
+  detectAborted = false; detectRunning = true;
+  state.detectingGroupIdx = groupIdx;
+  $("detect-btn").textContent = "停止";
+  $("detect-btn").style.color = "var(--danger)";
+  renderGroupNav();
+
+  var totalLines = 0;
+  channels.forEach(function(ch) { totalLines += ch.urls.length; });
+  var testedLines = 0;
+  showDetectProgress(0, totalLines, label);
+
+  var ci = 0;
+  function testNextChan() {
+    if (detectAborted || ci >= channels.length) { finishDetection(totalLines, label); return; }
+    var ch = channels[ci]; ci++;
+    var sKey = ch.group + "|" + ch.name;
+    if (!state.channelStatus[sKey]) state.channelStatus[sKey] = { lines: [] };
+    var arr = state.channelStatus[sKey].lines;
+    while (arr.length < ch.urls.length) arr.push({});
+    for (var li = 0; li < ch.urls.length; li++) arr[li].testing = true;
+    renderChannelList();
+
+    var liIdx = 0;
+    function testNextLine() {
+      if (detectAborted || liIdx >= ch.urls.length) {
+        renderChannelList(); renderBottomLines();
+        setTimeout(testNextChan, 60);
+        return;
+      }
+      var url = ch.urls[liIdx];
+      var curLi = liIdx; liIdx++;
+      // 第检测 playFailed 状态
+      var oldPf = arr[curLi].playFailed;
+      testSingleUrl(url, function(result) {
+        if (oldPf) result.playFailed = true;
+        arr[curLi] = result;
+        testedLines++;
+        showDetectProgress(testedLines, totalLines, label);
+        renderChannelList(); renderBottomLines();
+        setTimeout(testNextLine, result.ok ? 40 : 20);
+      });
+    }
+    testNextLine();
+  }
+  testNextChan();
+}
+
+function testSingleUrl(url, callback) {
+  if (!url) { callback({ ok: false, latency: -1 }); return; }
+  var start = Date.now();
+  var controller = new AbortController();
+  var timer = setTimeout(function() { controller.abort(); }, 5000);
+
+  fetch(url, { method: "HEAD", mode: "no-cors", cache: "no-cache", signal: controller.signal })
+    .then(function() {
+      clearTimeout(timer);
+      callback({ ok: true, latency: Date.now() - start });
+    })
+    .catch(function() {
+      clearTimeout(timer);
+      var c2 = new AbortController();
+      var t2 = setTimeout(function() { c2.abort(); }, 6000);
+      fetch(url, { method: "GET", mode: "no-cors", cache: "no-cache", signal: c2.signal })
+        .then(function() {
+          clearTimeout(t2);
+          callback({ ok: true, latency: Date.now() - start });
+        })
+        .catch(function() {
+          clearTimeout(t2);
+          callback({ ok: false, latency: Date.now() - start });
+        });
+    });
+}
+
+function showDetectProgress(cur, total, label) {
+  var el = $("detect-progress");
+  el.textContent = "检测中... " + cur + "/" + total + " 条线路" + (label ? " (" + label + ")" : "");
+  el.classList.add("show");
+}
+
+function finishDetection(totalLines, label) {
+  detectRunning = false;
+  state.detectingGroupIdx = undefined;
+  $("detect-btn").textContent = "检测";
+  $("detect-btn").style.color = "";
+  $("detect-progress").classList.remove("show");
+  renderGroupNav();
+  var ok = 0, fail = 0;
+  for (var k in state.channelStatus) {
+    var ls = state.channelStatus[k].lines;
+    if (!ls) continue;
+    for (var i = 0; i < ls.length; i++) {
+      if (ls[i].ok === true) ok++;
+      else if (ls[i].ok === false) fail++;
+    }
+  }
+  showToast((label || "检测") + "检测: " + ok + " 条可达, " + fail + " 第失第, 共 " + (totalLines || (ok + fail)) + " 条线路", fail ? "warn" : "success");
+  detectAborted = false;
+}
+function playChannelByGlobalIdx(gi) {
+  if (gi < 0 || gi >= state.allChannels.length) return;
+  state.curChanIdx = gi; state.curLineIdx = 0;
+  var ch = state.allChannels[gi];
+  playLine(ch, 0); renderChannelList(); renderBottomLines(); updateInfoBar();
+  if (state.cfg.remember) try { localStorage.setItem("mytv_lastch", gi); } catch(e) {}
+}
+/* 直锟接诧拷第指个频道指条线路 */
+function playLineByGlobalIdx(gi, li) {
+  if (gi < 0 || gi >= state.allChannels.length) return;
+  var ch = state.allChannels[gi];
+  if (li < 0 || li >= ch.urls.length) return;
+  state.curChanIdx = gi; state.curLineIdx = li;
+  // 锟矫伙拷锟街讹拷选共 共 重试薷重试
+  var sKey = ch.group + "|" + ch.name;
+  if (state.channelStatus[sKey] && state.channelStatus[sKey].lines && state.channelStatus[sKey].lines[li]) {
+    state.channelStatus[sKey].lines[li].repairCount = 0;
+  }
+  playLine(ch, li); renderChannelList(); renderBottomLines(); updateInfoBar();
+  if (state.cfg.remember) try { localStorage.setItem("mytv_lastch", gi); } catch(e) {}
+}
+function playLine(ch, li) {
+  var url = ch.urls[li] || ch.urls[0]; state.curLineIdx = li;
+  // 切换线路时清除 playFailed 和 repair 状态
+  var sKey = ch.group + "|" + ch.name;
+  if (state.channelStatus[sKey] && state.channelStatus[sKey].lines && state.channelStatus[sKey].lines[li]) {
+    state.channelStatus[sKey].lines[li].playFailed = false;
+  }
+  // 第取修复中第
+  var repairStrat = state.repairStrategy;
+  state.repairStrategy = null;
+
+  $("empty-state").style.display = "none";
+  showLoading(true, (repairStrat ? "修复中" : "正在播放") + " " + ch.name + "...");
+  setStatusTag(repairStrat ? "修复中" : "播放中", "");
+  destroyHls();
+  clearTimeout(state.playTimeout);
+
+  // 锟叫讹拷锟角凤拷共 hls.js播放中第直播锟侥硷拷第式第共 hls.js
+  var isDirectFile = /\.(mp4|webm|ogg|flv|ts|avi|mov|mkv|wmv)(\?|$|#)/i.test(url);
+  var useHls = window.Hls && Hls.isSupported() && !isDirectFile;
+
+  // 修复中锟皆革拷第
+  if (repairStrat === "native") {
+    useHls = false; // 强第原重试锟脚ｏ拷重试hls.js第
+  }
+
+  if (useHls) {
+    // crossOrigin 必须设置在 hls.attachMedia 之前
+    videoEl.crossOrigin = "anonymous";
+    // HLS 配置
+    var hlsCfg = {
+      enableWorker: false,
+      manifestLoadingMaxRetry: 2, manifestLoadingRetryDelay: 1000,
+      levelLoadingMaxRetry: 2, levelLoadingRetryDelay: 1000
+    };
+    if (repairStrat === "relaxed") {
+      // 重试模式第锟接大缓筹拷重试锟截闭碉拷锟接迟★拷播放中第
+      hlsCfg = {
+        enableWorker: false,
+        lowLatencyMode: false,
+        maxBufferLength: 60,
+        maxMaxBufferLength: 600,
+        backBufferLength: 90,
+        manifestLoadingMaxRetry: 5, manifestLoadingRetryDelay: 2000,
+        levelLoadingMaxRetry: 5, levelLoadingRetryDelay: 2000,
+        fragLoadingMaxRetry: 3
+      };
+    } else {
+      // 默第模式
+      hlsCfg.lowLatencyMode = true;
+      hlsCfg.backBufferLength = 30;
+    }
+    var hls = new Hls(hlsCfg);
+    state.hls = hls;
+    hls.loadSource(url); hls.attachMedia(videoEl);
+    hls.on(Hls.Events.MANIFEST_PARSED, function(ev, data) {
+      // 第取播放中息
+      var codec = "";
+      if (data.levels && data.levels.length) {
+        data.levels.forEach(function(lv) {
+          var c = (lv.attrs && lv.attrs.CODECS) || (lv.codecs) || "";
+          if (c && !codec) codec = c;
+        });
+        // 如果不是HEVC
+        var allHevc = true;
+        data.levels.forEach(function(lv) {
+          var c = (lv.attrs && lv.attrs.CODECS) || (lv.codecs) || "";
+          if (!/hvc|hev|HEVC|H265|h265/i.test(c)) allHevc = false;
+        });
+        if (allHevc) {
+          console.warn("[MyTV] All variants use HEVC, browser may not decode video");
+          state.hevcWarned = ch.name;
+        }
+      }
+      if (codec) saveLineCodec(ch, codec);
+      startPlaybackWatchdog(ch);
+      videoEl.play().catch(function() {});
+    });
+    hls.on(Hls.Events.ERROR, function(ev, data) {
+      if (!data.fatal) {
+        // 播放中第锟襟：伙拷第停第/第锟界抖共 共 第锟皆恢革拷
+        var isNetworkErr = data.type === Hls.ErrorTypes.NETWORK_ERROR;
+        var isBufferStall = data.details === "bufferStalledError";
+        if (isNetworkErr || isBufferStall) {
+          console.warn("[MyTV] HLS recoverable:", data.details, "共 retrying");
+          setTimeout(function() {
+            if (state.hls === hls && state.curChanIdx >= 0) hls.recoverMediaError();
+          }, isBufferStall ? 500 : 1000);
+        }
+        return;
+      }
+      // 播放正常，清除错误状态
+      console.error("[MyTV] HLS fatal:", data.type, data.details);
+      var reason = data.type === Hls.ErrorTypes.NETWORK_ERROR ? "network" : "hls_error";
+      handlePlayError(ch, reason, data.type + "/" + (data.details || "unknown"));
+    });
+    hls.on(Hls.Events.LEVEL_LOADED, function() {
+      // 片锟轿匡拷始第锟截ｏ拷锟接筹拷第锟脚癸拷播放中锟姐够时锟戒）
+      resetPlaybackWatchdog(ch);
+    });
+  } else {
+    // 原生 video 播放（非HLS文件/修复模式=原生）
+    videoEl.crossOrigin = "anonymous";
+    videoEl.src = url;
+    videoEl.load();
+    // 修复中第模式第锟接筹拷第锟脚癸拷
+    if (repairStrat === "retry" || repairStrat === "native") {
+      state.playTimeout = setTimeout(function() {
+        if (state.curChanIdx >= 0 && (!videoEl.playing || !videoEl.currentTime)) {
+          console.warn("[MyTV] Native/retry watchdog timeout for", ch.name);
+          handlePlayError(ch, "timeout", "native retry failed");
+        }
+      }, 20000); // 修复模式更宽容的超时时间
+    } else {
+      startPlaybackWatchdog(ch);
+    }
+    videoEl.play().catch(function(e) {
+      // play() 第锟杰撅拷通重试锟皆讹拷第锟脚诧拷锟皆ｏ拷重试媒第检测
+      // 重试没第呀播放中播放中第默重试
+      if (e.name === "NotAllowedError") {
+        console.warn("[MyTV] Autoplay blocked by browser policy");
+      } else {
+        handlePlayError(ch, "media_error", e.name + ": " + (e.message || ""));
+      }
+    });
+  }
+  updateOverlay(ch);
+}
+
+/* 播放超时第锟脚癸拷第12重试未第始第共 共 锟皆讹拷条线路 */
+function startPlaybackWatchdog(ch) {
+  clearTimeout(state.playTimeout);
+  state.playTimeout = setTimeout(function() {
+    if (state.curChanIdx >= 0 && !videoEl.playing && !videoEl.currentTime) {
+      console.warn("[MyTV] Playback watchdog timeout for", ch.name);
+      handlePlayError(ch, "timeout", "12s no playback");
+    }
+  }, 12000);
+}
+function resetPlaybackWatchdog(ch) {
+  clearTimeout(state.playTimeout);
+  state.playTimeout = setTimeout(function() {
+    if (state.curChanIdx >= 0 && !videoEl.playing) {
+      console.warn("[MyTV] Playback watchdog timeout (reset) for", ch.name);
+      handlePlayError(ch, "timeout", "extended timeout");
+    }
+  }, 18000);
+}
+
+/* 个频道锟诫不第锟捷达拷播放中重试锟睫伙拷共 */
+function handleCodecError(ch) {
+  clearTimeout(state.playTimeout);
+  clearTimeout(state.videoCheckTimer);
+  diagnosePlayFailure(ch, "codec", "HEVC/H.265 video-only, no picture");
+  markLinePlayFailed(ch);
+  showLoading(false);
+
+  // 锟饺筹拷第修复中原重试锟脚匡拷第支第HEVC重试Safari第
+  var sKey = ch.group + "|" + ch.name, ls = (state.channelStatus[sKey] && state.channelStatus[sKey].lines) || [];
+  var curLs = ls[state.curLineIdx] || {};
+  if (!curLs.repairCount || curLs.repairCount === 0) {
+    if (tryRepairLine(ch, state.curLineIdx)) return;
+  }
+
+  if (state.cfg.autoswitch && state.curLineIdx < ch.urls.length - 1) {
+    var nl = state.curLineIdx + 1;
+    showToast("线路" + (state.curLineIdx + 1) + " 个频道锟诫不重试(重试HEVC)第锟叫伙拷线路" + (nl + 1), "warn");
+    setTimeout(function() { playLine(ch, nl); }, 500);
+  } else {
+    setStatusTag("编码不兼容", "err");
+    showToast("频道 " + ch.name + " 视频编码不兼容(可能H.265/HEVC)，当前浏览器不支持此编码，请尝试切换线路", "error");
+  }
+}
+
+/* 第堑锟角帮拷锟铰凤拷第锟绞э拷埽重试锟絆K第锟睫凤拷第锟脚★拷第色共 */
+function markLinePlayFailed(ch) {
+  var sKey = ch.group + "|" + ch.name;
+  if (!state.channelStatus[sKey]) state.channelStatus[sKey] = { lines: [] };
+  var arr = state.channelStatus[sKey].lines;
+  while (arr.length <= state.curLineIdx) arr.push({});
+  arr[state.curLineIdx].playFailed = true;
+  renderBottomLines(); renderChannelList();
+}
+
+function handlePlayError(ch, reason, detail) {
+  clearTimeout(state.playTimeout);
+  // 播放成功时
+  diagnosePlayFailure(ch, reason || "unknown", detail || "");
+  // 第堑锟角帮拷锟铰凤拷第锟绞э拷埽重试锟絆K第锟睫凤拷第锟脚★拷第色第
+  markLinePlayFailed(ch);
+
+  // 锟饺筹拷第修复中前线路第锟阶达拷失第锟皆讹拷锟睫革拷一锟轿ｏ拷
+  var sKey = ch.group + "|" + ch.name, ls = (state.channelStatus[sKey] && state.channelStatus[sKey].lines) || [];
+  var curLs = ls[state.curLineIdx] || {};
+  if (!curLs.repairCount || curLs.repairCount === 0) {
+    if (tryRepairLine(ch, state.curLineIdx)) {
+      return; // 锟睫革拷锟窖达拷播放中重试锟叫伙拷
+    }
+  }
+
+  // 锟睫革拷失锟杰伙拷锟窖筹拷锟皆癸拷 共 锟叫伙拷线路
+  if (state.cfg.autoswitch && state.curLineIdx < ch.urls.length - 1) {
+    var nl = state.curLineIdx + 1;
+    showToast("线路" + (state.curLineIdx + 1) + "失第, 锟叫伙拷线路" + (nl + 1), "warn");
+    setTimeout(function() { playLine(ch, nl); }, 500);
+  } else {
+    showLoading(false); setStatusTag("全部失败", "err");
+    showToast("频道 " + ch.name + " 所有线路均已失败，请尝试手动修复或切换频道", "error");
+  }
+}
+/* 播放成功时清除 */
+function diagnosePlayFailure(ch, reason, detail) {
+  var sKey = ch.group + "|" + ch.name;
+  if (!state.channelStatus[sKey]) state.channelStatus[sKey] = { lines: [] };
+  var arr = state.channelStatus[sKey].lines;
+  while (arr.length <= state.curLineIdx) arr.push({});
+  arr[state.curLineIdx].failReason = reason;
+  arr[state.curLineIdx].failDetail = detail || "";
+  state.lastErrorInfo = { type: reason, detail: detail || "", timestamp: Date.now() };
+  renderBottomLines();
+}
+
+/* 失败原因诊断标签 */
+function getRepairLabel(reason) {
+  switch(reason) {
+    case "codec": return "编码不兼容";
+    case "timeout": return "播放超时";
+    case "network": return "重试检测";
+    case "hls_error": return "HLS错误";
+    case "media_error": return "媒第检测";
+    default: return "未知原因";
+  }
+}
+
+/* 修复策略：根据错误类型选择不同的修复方式 */
+function tryRepairLine(ch, lineIdx) {
+  var sKey = ch.group + "|" + ch.name;
+  var st = state.channelStatus[sKey];
+  if (!st || !st.lines || !st.lines[lineIdx]) return false;
+  var ls = st.lines[lineIdx];
+  var count = ls.repairCount || 0;
+  if (count >= 3) {
+    console.warn("[MyTV] Max repair attempts reached for line " + (lineIdx + 1));
+    return false;
+  }
+  ls.repairCount = count + 1;
+  var reason = ls.failReason || "unknown";
+  var detail = ls.failDetail || "";
+
+  // 全部失败原第选第修复中第
+  var strategy;
+  if (reason === "codec") {
+    // 编码修复：关闭hls.js用原生播放，部分浏览器支持HLS（如Safari）
+    strategy = "native";
+  } else if (reason === "hls_error") {
+    // HLS播放中锟矫匡拷播放中第锟皆ｏ拷锟劫伙拷第原第
+    strategy = count === 1 ? "relaxed" : "native";
+  } else if (reason === "media_error") {
+    // 媒播放中第原播放中
+    strategy = "native";
+  } else if (reason === "timeout") {
+    // 第时第锟接大缓筹拷重试锟皆ｏ拷第直播重试
+    strategy = count === 1 ? "relaxed" : "retry";
+  } else {
+    // 重试/未知播放中锟皆ｏ拷第原第
+    strategy = count === 1 ? "retry" : "native";
+  }
+
+  console.log("[MyTV] Repair attempt #" + count + " for line " + (lineIdx + 1) + " reason=" + reason + " strategy=" + strategy);
+  showToast("修复中路" + (lineIdx + 1) + " (" + getRepairLabel(reason) + "第" + (strategy === "relaxed" ? "宽松HLS" : strategy === "native" ? "原播放中" : "重试") + ")", "warn");
+
+  state.repairStrategy = strategy;
+  state.curLineIdx = lineIdx;
+  playLine(ch, lineIdx);
+  return true;
+}
+
+/* 锟街讹拷重试修复中锟接碉拷重试钮共 */
+function manualRepairLine(gi, li) {
+  if (gi < 0 || gi >= state.allChannels.length) return;
+  var ch = state.allChannels[gi];
+  if (li < 0 || li >= ch.urls.length) return;
+  state.curChanIdx = gi; state.curLineIdx = li;
+  // 重试修复中重试锟矫伙拷锟街讹拷播放中播放中锟皆ｏ拷
+  var sKey = ch.group + "|" + ch.name;
+  if (state.channelStatus[sKey] && state.channelStatus[sKey].lines && state.channelStatus[sKey].lines[li]) {
+    state.channelStatus[sKey].lines[li].repairCount = 0;
+  }
+  tryRepairLine(ch, li);
+  renderChannelList(); updateInfoBar();
+}
+
+function destroyHls() { clearTimeout(state.playTimeout); clearTimeout(state.videoCheckTimer); if (state.hls) { state.hls.destroy(); state.hls = null; } videoEl.removeAttribute("src"); videoEl.load(); }
+
+/* ---------- 信息覆盖层更新 ---------- */
+function updateInfoBar() {
+  if (state.curChanIdx < 0) return;
+  var ch = state.allChannels[state.curChanIdx];
+  $("info-ch-name").textContent = ch.name;
+  var isFav = state.favorites.has(ch.name);
+  $("fav-btn").textContent = isFav ? "已收藏" : "收藏";
+  if (isFav) $("fav-btn").classList.add("active"); else $("fav-btn").classList.remove("active");
+}
+function updateOverlay(ch) {
+  $("ov-ch-name").textContent = ch.name;
+  $("ov-ch-num").textContent = "第" + ch.index + "台";
+  $("ov-line").textContent = "线路 " + (state.curLineIdx + 1) + "/" + ch.urls.length;
+  showOverlay();
+}
+function setStatusTag(text, cls) {
+  var t = $("status-tag"); t.textContent = text;
+  t.className = "info-tag" + (cls ? " " + cls : "");
+}
+var overlayVisible = false;
+function showOverlay() {
+  $("overlay").classList.add("show"); overlayVisible = true;
+  clearTimeout(state.overlayTimer); state.overlayTimer = setTimeout(hideOverlay, 4000);
+}
+function hideOverlay() { $("overlay").classList.remove("show"); overlayVisible = false; }
+document.addEventListener("mousemove", function() { if (state.curChanIdx >= 0) showOverlay(); });
+
+/* ---------- Loading ---------- */
+function showLoading(show, text) {
+  clearTimeout(state.loadingTimer);
+  if (show) { $("loading-text").textContent = text || "第锟节硷拷第..."; $("loading-mask").classList.add("show"); state.loadingTimer = setTimeout(function() { showLoading(false); }, 15000); }
+  else { $("loading-mask").classList.remove("show"); }
+}
+
+/* ---------- 视频播放 ---------- */
+videoEl.addEventListener("playing", function() {
+  clearTimeout(state.playTimeout);
+  showLoading(false);
+  setStatusTag(state.repairStrategy ? "第锟睫革拷" : "直播第", "live");
+  state.repairStrategy = null;
+  // 播放成功后清除 playFailed 和 repair 状态
+  if (state.curChanIdx >= 0) {
+    var ch = state.allChannels[state.curChanIdx];
+    var sKey = ch.group + "|" + ch.name;
+    if (state.channelStatus[sKey] && state.channelStatus[sKey].lines && state.channelStatus[sKey].lines[state.curLineIdx]) {
+      var ls = state.channelStatus[sKey].lines[state.curLineIdx];
+      ls.playFailed = false;
+      ls.failReason = undefined;
+      ls.failDetail = undefined;
+      ls.repairCount = 0;
+      renderBottomLines(); renderChannelList();
+    }
+  }
+  // 延迟检查：3秒后如果还是失败再确认
+  clearTimeout(state.videoCheckTimer);
+  state.videoCheckTimer = setTimeout(function() {
+    if (videoEl.videoWidth === 0 && videoEl.videoHeight === 0 && state.curChanIdx >= 0) {
+      var ch = state.allChannels[state.curChanIdx];
+      console.warn("[MyTV] Video track missing for", ch.name, "(audio-only)");
+      handleCodecError(ch);
+    }
+  }, 3000);
+});
+videoEl.addEventListener("waiting", function() {
+  setStatusTag("播放中", "");
+});
+videoEl.addEventListener("stalled", function() {
+  // 重试停锟酵ｏ拷检测10第锟节伙拷没锟街革拷 共 播放中时第锟脚癸拷
+  clearTimeout(state.playTimeout);
+  state.playTimeout = setTimeout(function() {
+    if (state.curChanIdx >= 0 && videoEl.paused && !videoEl.ended) {
+      var ch = state.allChannels[state.curChanIdx];
+      console.warn("[MyTV] Stalled too long for", ch.name);
+      handlePlayError(ch, "timeout", "buffer stalled 10s");
+    }
+  }, 10000);
+});
+videoEl.addEventListener("error", function() {
+  clearTimeout(state.playTimeout);
+  if (state.curChanIdx < 0) return;
+  var ch = state.allChannels[state.curChanIdx];
+  var err = videoEl.error;
+  var errCode = err ? err.code : -1;
+  var errMsg = err ? ("code=" + err.code + (err.message ? " " + err.message : "")) : "unknown";
+  console.error("[MyTV] Video error:", errMsg, "url=" + (videoEl.currentSrc || videoEl.src));
+  // 重试MediaError.code重试: 1=MEDIA_ERR_ABORTED 2=MEDIA_ERR_NETWORK 3=MEDIA_ERR_DECODE 4=MEDIA_ERR_SRC_NOT_SUPPORTED
+  var reason = errCode === 3 || errCode === 4 ? "codec" : (errCode === 2 ? "network" : "media_error");
+  handlePlayError(ch, reason, errMsg);
+});
+
+/* ---------- 快捷键操作 ---------- */
+document.addEventListener("keydown", function(e) {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "TEXTAREA") return;
+  var k = e.key;
+  if (/^[0-9]$/.test(k)) { e.preventDefault(); handleDigit(k); return; }
+  switch(k) {
+    case "ArrowUp": e.preventDefault(); navChan(-1); break;
+    case "ArrowDown": e.preventDefault(); navChan(1); break;
+    case "ArrowLeft": e.preventDefault(); navGroup(-1); break;
+    case "ArrowRight": e.preventDefault(); navGroup(1); break;
+    case "Enter": e.preventDefault(); if (state.curChanIdx < 0 && state.allChannels.length) playChannelByGlobalIdx(0); break;
+    case "f": case "F": e.preventDefault(); toggleFavorite(); break;
+    case "Escape": e.preventDefault(); hideOverlay(); closeSettings(); break;
+    case " ": e.preventDefault(); if (videoEl.paused) videoEl.play(); else videoEl.pause(); break;
+  }
+});
+function navChan(dir) {
+  if (!state.allChannels.length) return;
+  var chans = getCurChans(); if (!chans.length) return;
+  var cli = chans.findIndex(function(c) { return state.allChannels.indexOf(c) === state.curChanIdx; });
+  cli = ((cli + dir) + chans.length) % chans.length;
+  playChannelByGlobalIdx(state.allChannels.indexOf(chans[cli]));
+}
+function navGroup(dir) {
+  if (!state.groups.length) return;
+  var next = ((state.curGroupIdx + dir) + state.groups.length) % state.groups.length;
+  selectGroup(next);
+}
+
+/* ---------- 数字选台 ---------- */
+function handleDigit(d) {
+  clearTimeout(state.digitTimer);
+  state.digitBuf += d; if (state.digitBuf.length > 3) state.digitBuf = d;
+  $("dial-number").textContent = padLeft(state.digitBuf, 3);
+  $("dial-toast").classList.add("show");
+  state.digitTimer = setTimeout(function() {
+    var num = parseInt(state.digitBuf, 10); state.digitBuf = "";
+    $("dial-toast").classList.remove("show");
+    var ch = null;
+    for (var j = 0; j < state.allChannels.length; j++) { if (state.allChannels[j].index === num) { ch = state.allChannels[j]; break; } }
+    if (ch) playChannelByGlobalIdx(state.allChannels.indexOf(ch));
+    else showToast("没有编号 " + num + " 个频道", "warn");
+  }, 1500);
+}
+function padLeft(s, n) { while (s.length < n) s = " " + s; return s; }
+
+/* ---------- 收藏 ---------- */
+function toggleFavorite() { if (state.curChanIdx >= 0) toggleFavoriteByName(state.allChannels[state.curChanIdx].name); }
+function toggleFavoriteByName(name) {
+  if (state.favorites.has(name)) { state.favorites.delete(name); showToast("第取第: " + name, "warn"); }
+  else { state.favorites.add(name); showToast("已收藏: " + name, "success"); }
+  saveFavorites(); updateInfoBar(); renderSidebar();
+}
+
+/* ---------- 全屏/画中画 ---------- */
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    var el = $("player-area");
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+  }
+}
+function togglePip() {
+  try {
+    if (document.pictureInPictureElement) document.exitPictureInPicture();
+    else videoEl.requestPictureInPicture();
+  } catch(e) { showToast("第锟叫伙拷播放中", "warn"); }
+}
+
+/* ---------- 音量控制 ---------- */
+function loadVolume() {
+  try {
+    var v = parseFloat(localStorage.getItem("mytv_volume") || "1");
+    var m = localStorage.getItem("mytv_muted") === "true";
+    state.volume = isNaN(v) ? 1 : Math.max(0, Math.min(1, v));
+    state.isMuted = m;
+    applyVolume();
+  } catch(e) {}
+}
+function saveVolume() {
+  try { localStorage.setItem("mytv_volume", state.volume); localStorage.setItem("mytv_muted", state.isMuted); } catch(e) {}
+}
+function applyVolume() {
+  videoEl.volume = state.isMuted ? 0 : state.volume;
+  $("vol-slider").value = state.isMuted ? 0 : Math.round(state.volume * 100);
+  var mb = $("mute-btn");
+  mb.textContent = state.isMuted || state.volume === 0 ? "\uD83D\uDD07" : (state.volume < 0.5 ? "\uD83D\uDD09" : "\uD83D\uDD0A");
+  if (state.isMuted) mb.classList.add("muted"); else mb.classList.remove("muted");
+}
+function setVolume(val) {
+  state.volume = val / 100;
+  state.isMuted = state.volume === 0;
+  applyVolume(); saveVolume();
+}
+function toggleMute() {
+  state.isMuted = !state.isMuted;
+  if (!state.isMuted && state.volume === 0) { state.volume = 0.5; }
+  applyVolume(); saveVolume();
+}
+
+/* ---------- 下载（双模式: HLS分片 / 直连流） ---------- */
+/* HLS(m3u8): 解析m3u8 → 逐个下载TS分片 → 合并 → 原始画质零损耗
+   非HLS(mp4/flv/ts等): 直接fetch流下载 → 零播放影响、零CPU录制开销
+   直播流: 轮询m3u8持续抓新分片 / 直连持续读取流直到停止
+   VOD 点播: 一次性下载完毕后自动保存 */
+function toggleDownload() {
+  if (state.dlActive) {
+    stopDownload(true);
+  } else {
+    startDownload();
+  }
+}
+
+function startDownload() {
+  var streamUrl = "";
+  if (state.hls && state.hls.url) {
+    streamUrl = state.hls.url;
+  } else if (state.curChanIdx >= 0) {
+    var ch = state.allChannels[state.curChanIdx];
+    streamUrl = ch.urls[state.curLineIdx] || ch.urls[0];
+  }
+  if (!streamUrl) {
+    showToast("无法获取播放地址", "error"); return;
+  }
+
+  var isHLS = /\.m3u8(\?|$)/i.test(streamUrl) || /\/m3u8/i.test(streamUrl);
+
+  state.dlActive = true;
+  state.dlStartTime = Date.now();
+  state.dlChunks = [];
+
+  // UI
+  $("download-btn").classList.add("recording");
+  $("download-btn").innerHTML = '<span id="rec-dot"></span>停止';
+  $("rec-indicator").classList.add("show");
+  $("rec-timer").textContent = "00:00";
+  $("dl-progress").textContent = "";
+  updateDlTimer();
+  state.dlTimerId = setInterval(updateDlTimer, 1000);
+
+  if (isHLS) {
+    state.dlMode = "hls";
+    state.dlAborter = new AbortController();
+    state.dlTotalSegments = 0;
+    state.dlDownloadedSegments = 0;
+    state.dlSeenUrls = {};
+    state.dlM3u8Url = streamUrl;
+    state.dlProxyBase = "";
+    state.dlFailedSegments = 0;
+    // 检测代理可用性，如有则通过代理下载（绕过CORS）
+    checkProxy().then(function(proxyBase) {
+      if (!state.dlActive) return;
+      if (proxyBase) {
+        state.dlProxyBase = proxyBase;
+        showToast("开始下载分片 (HLS, 通过代理)...", "success");
+      } else {
+        showToast("开始下载分片 (HLS, 直连)...", "success");
+      }
+      downloadLoop(streamUrl);
+    }).catch(function() {
+      if (!state.dlActive) return;
+      showToast("开始下载分片 (HLS, 直连)...", "success");
+      downloadLoop(streamUrl);
+    });
+  } else {
+    // 非HLS流: Canvas+AudioContext录制, 不抢源流
+    startDirectRecord();
+  }
+}
+
+function stopDownload(save) {
+  state.dlActive = false;
+
+  if (state.dlAborter) {
+    try { state.dlAborter.abort(); } catch(e) {}
+    state.dlAborter = null;
+  }
+  if (state.dlPollTimerId) { clearTimeout(state.dlPollTimerId); state.dlPollTimerId = null; }
+  if (state.dlTimerId) { clearInterval(state.dlTimerId); state.dlTimerId = null; }
+
+  // 录制模式: 停止 MediaRecorder，onstop 异步处理保存+清理
+  if (state.dlMode === "record" && state.dlMediaRecorder) {
+    if (state.dlMediaRecorder.state === "recording") {
+      state.dlMediaRecorder.requestData();
+      state.dlMediaRecorder.stop();
+      showToast("正在封装录制文件...", "info");
+    } else {
+      // recorder 已停止（异常状态），直接清理
+      forceCleanDl();
+      showToast("录制已中断", "warn");
+    }
+    // UI 和状态由 onstop 或 forceCleanDl 处理，这里不做
+    return;
+  }
+
+  // HLS 模式: 直接合并保存
+  $("download-btn").classList.remove("recording");
+  $("download-btn").innerHTML = '<span id="rec-dot"></span>下载';
+  $("rec-indicator").classList.remove("show");
+
+  if (save && state.dlChunks.length > 0) {
+    mergeAndSave();
+  } else if (save) {
+    var msg = "没有下载到任何数据";
+    if (state.dlFailedSegments > 0) {
+      msg += " (" + state.dlFailedSegments + " 个分片下载失败)";
+      if (!state.dlProxyBase) msg += " [未检测到代理，可能存在CORS限制]";
+      else msg += " [代理: " + state.dlProxyBase + "]";
+    } else {
+      msg += " (未获取到任何分片)";
+    }
+    showToast(msg, "warn");
+  }
+
+  state.dlChunks = [];
+  state.dlTotalSegments = 0;
+  state.dlDownloadedSegments = 0;
+  state.dlDownloadedSize = 0;
+  state.dlStartTime = null;
+  state.dlSeenUrls = null;
+  state.dlM3u8Url = "";
+  state.dlProxyBase = "";
+  state.dlContentType = "";
+  state.dlMode = "";
+}
+
+/* ===== Canvas+AudioContext 录制 (非HLS流) ===== */
+/* 用 Canvas 逐帧绘制 video → captureStream → 配合 AudioContext 捕获音频 → MediaRecorder 编码
+   完全不触碰源流，不影响视频播放 */
+function startDirectRecord() {
+  // 检测 video 是否有有效画面
+  if (videoEl.readyState < 2 || videoEl.videoWidth === 0 || videoEl.videoHeight === 0) {
+    showToast("视频尚未加载画面，请先等待播放", "warn");
+    forceCleanDl(); return;
+  }
+
+  state.dlMode = "record";
+  state.dlChunks = [];  // 录制数据块
+  state.dlRecordedBlob = null;
+
+  // 1. 创建隐藏 Canvas
+  var canvas = document.createElement("canvas");
+  canvas.width = videoEl.videoWidth;
+  canvas.height = videoEl.videoHeight;
+  canvas.style.display = "none";
+  document.body.appendChild(canvas);
+  state.dlRecCanvas = canvas;
+  state.dlRecCanvasCtx = canvas.getContext("2d");
+
+  // 2. 从 Canvas 创建视频流 (25fps, 平衡画质和性能)
+  var canvasStream;
+  try {
+    canvasStream = canvas.captureStream(25);
+  } catch(e) {
+    showToast("浏览器不支持 Canvas 录制", "error");
+    forceCleanDl(); return;
+  }
+
+  // 3. 获取音频流
+  var audioStream = null;
+  var combinedStream;
+  try {
+    audioStream = getRecordAudioStream();
+  } catch(e) {
+    console.warn("[MyTV] Audio capture failed:", e.message);
+    // 音频获取失败也继续，纯视频录制
+  }
+
+  // 4. 合并音视频流
+  if (audioStream && audioStream.getAudioTracks().length > 0) {
+    combinedStream = new MediaStream();
+    canvasStream.getVideoTracks().forEach(function(t) { combinedStream.addTrack(t); });
+    audioStream.getAudioTracks().forEach(function(t) { combinedStream.addTrack(t); });
+  } else {
+    combinedStream = canvasStream;
+  }
+
+  // 5. 创建 MediaRecorder
+  var mimeType = "";
+  var mimeOptions = [
+    "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus",
+    "video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"
+  ];
+  for (var i = 0; i < mimeOptions.length; i++) {
+    if (MediaRecorder.isTypeSupported(mimeOptions[i])) { mimeType = mimeOptions[i]; break; }
+  }
+
+  var recorder;
+  try {
+    recorder = new MediaRecorder(combinedStream, {
+      mimeType: mimeType || undefined,
+      videoBitsPerSecond: 2500000  // 2.5Mbps
+    });
+  } catch(e) {
+    showToast("浏览器不支持录制编码", "error");
+    cleanupRecordResources(); forceCleanDl(); return;
+  }
+
+  state.dlMediaRecorder = recorder;
+  var chunks = state.dlChunks;
+
+  recorder.ondataavailable = function(e) {
+    if (e.data && e.data.size > 0) chunks.push(e.data);
+  };
+
+  recorder.onstop = function() {
+    if (chunks.length > 0) {
+      var blob = new Blob(chunks, { type: recorder.mimeType || "video/webm" });
+      state.dlRecordedBlob = blob;
+      mergeRecordSave(blob);
+    }
+    // 清理录制资源
+    cleanupRecordResources();
+    // 清理下载状态
+    $("download-btn").classList.remove("recording");
+    $("download-btn").innerHTML = '<span id="rec-dot"></span>下载';
+    $("rec-indicator").classList.remove("show");
+    if (state.dlTimerId) { clearInterval(state.dlTimerId); state.dlTimerId = null; }
+    state.dlChunks = [];
+    state.dlStartTime = null;
+    state.dlMode = "";
+    state.dlActive = false;
+  };
+
+  recorder.onerror = function(e) {
+    console.error("[MyTV] MediaRecorder error:", e);
+    showToast("录制编码出错", "error");
+    forceCleanDl();
+  };
+
+  // 6. 启动 Canvas 帧绘制
+  startCanvasDraw();
+
+  // 7. 启动录制
+  try {
+    recorder.start(1000); // 每秒分片
+  } catch(e) {
+    showToast("启动录制失败: " + e.message, "error");
+    forceCleanDl(); return;
+  }
+
+  showToast("开始录制 (Canvas)...", "success");
+}
+
+/* Canvas 逐帧绘制 - 优先 requestVideoFrameCallback, 回退 setInterval 25fps */
+function startCanvasDraw() {
+  var canvas = state.dlRecCanvas;
+  var ctx = state.dlRecCanvasCtx;
+  if (!canvas || !ctx) return;
+
+  var drawFrame = function() {
+    if (!state.dlActive || !state.dlRecCanvas || !state.dlRecCanvasCtx || !state.dlMediaRecorder) return;
+    // 检查 recorder 状态
+    if (state.dlMediaRecorder.state !== "recording") return;
+
+    try {
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+    } catch(e) {
+      // Canvas tainted (跨域), 忽略
+    }
+
+    // 继续下一帧
+    if (videoEl.requestVideoFrameCallback) {
+      state.dlVidCallbackId = videoEl.requestVideoFrameCallback(drawFrame);
+    }
+  };
+
+  if (videoEl.requestVideoFrameCallback) {
+    state.dlVidCallbackId = videoEl.requestVideoFrameCallback(drawFrame);
+  } else {
+    // 回退: setInterval 25fps
+    state.dlRecordInterval = setInterval(drawFrame, 40);
+  }
+}
+
+/* 获取音频流: 优先 AudioContext (可捕获解码后音频), 回退 captureStream */
+function getRecordAudioStream() {
+  // 方案1: AudioContext + MediaElementSource (捕获解码后音频, 不影响播放)
+  try {
+    var AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) {
+      var actx = new AudioCtx();
+      state.dlAudioCtx = actx;
+      var dest = actx.createMediaStreamDestination();
+      state.dlAudioDest = dest;
+      var src = actx.createMediaElementSource(videoEl);
+      state.dlAudioSrc = src;
+      // 同时连接到扬声器 (保持外放) 和录制目标
+      src.connect(dest);
+      src.connect(actx.destination);
+      return dest.stream;
+    }
+  } catch(e) {
+    // AudioContext 失败, 尝试 captureStream
+    console.warn("[MyTV] AudioContext failed, trying captureStream:", e.message);
+    if (state.dlAudioCtx) { try { state.dlAudioCtx.close(); } catch(ex) {} state.dlAudioCtx = null; }
+    if (state.dlAudioSrc) { try { state.dlAudioSrc.disconnect(); } catch(ex) {} state.dlAudioSrc = null; }
+    if (state.dlAudioDest) { state.dlAudioDest = null; }
+  }
+
+  // 方案2: video.captureStream 音轨
+  try {
+    var capStream = videoEl.captureStream ? videoEl.captureStream() : null;
+    if (capStream && capStream.getAudioTracks().length > 0) {
+      return new MediaStream(capStream.getAudioTracks());
+    }
+  } catch(e) {
+    console.warn("[MyTV] captureStream audio failed:", e.message);
+  }
+
+  return null;
+}
+
+/* 录制完成后保存 */
+function mergeRecordSave(blob) {
+  if (!blob || blob.size === 0) {
+    showToast("录制的文件为空", "warn"); return;
+  }
+
+  try {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.style.display = "none";
+    var chName = (state.curChanIdx >= 0) ? state.allChannels[state.curChanIdx].name : "未知";
+    a.href = url;
+    a.download = "MTV_" + chName.replace(/[\/\\:*?"<>|]/g, "_") + "_" +
+      new Date().toISOString().slice(0,19).replace(/:/g,"-") + ".webm";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+
+    var dur = state.dlStartTime ? Math.round((Date.now() - state.dlStartTime) / 1000) : 0;
+    var min = Math.floor(dur / 60), sec = dur % 60;
+    var sizeMB = (blob.size / 1048576).toFixed(1);
+    showToast("已保存(" + sizeMB + "MB): " + a.download + " (" + min + "分" + sec + "秒)", "success");
+  } catch(e) {
+    console.error("[MyTV] Save recording failed:", e);
+    showToast("保存录制文件失败: " + e.message, "error");
+  }
+}
+
+/* 强制清理下载状态 */
+function forceCleanDl() {
+  if (state.dlAborter) { try { state.dlAborter.abort(); } catch(e) {} state.dlAborter = null; }
+  if (state.dlPollTimerId) { clearTimeout(state.dlPollTimerId); state.dlPollTimerId = null; }
+  if (state.dlTimerId) { clearInterval(state.dlTimerId); state.dlTimerId = null; }
+  cleanupRecordResources();
+
+  $("download-btn").classList.remove("recording");
+  $("download-btn").innerHTML = '<span id="rec-dot"></span>下载';
+  $("rec-indicator").classList.remove("show");
+
+  state.dlActive = false; state.dlMode = "";
+  state.dlChunks = []; state.dlStartTime = null;
+  state.dlDownloadedSize = 0; state.dlContentType = "";
+  state.dlProxyBase = ""; state.dlSeenUrls = null;
+  state.dlFailedSegments = 0;
+}
+
+/* 清理录制资源 (Canvas, AudioContext, MediaRecorder) */
+function cleanupRecordResources() {
+  // 停止 MediaRecorder
+  if (state.dlMediaRecorder) {
+    try { if (state.dlMediaRecorder.state === "recording") state.dlMediaRecorder.stop(); } catch(e) {}
+    state.dlMediaRecorder = null;
+  }
+  // 停止 Canvas 绘制
+  if (state.dlVidCallbackId) {
+    try { videoEl.cancelVideoFrameCallback(state.dlVidCallbackId); } catch(e) {}
+    state.dlVidCallbackId = null;
+  }
+  if (state.dlRecordInterval) { clearInterval(state.dlRecordInterval); state.dlRecordInterval = null; }
+  // 移除 Canvas
+  if (state.dlRecCanvas) {
+    try { if (state.dlRecCanvas.parentNode) state.dlRecCanvas.parentNode.removeChild(state.dlRecCanvas); } catch(e) {}
+  }
+  state.dlRecCanvas = null; state.dlRecCanvasCtx = null;
+  // 断开并关闭 AudioContext
+  if (state.dlAudioSrc) {
+    try { state.dlAudioSrc.disconnect(); } catch(e) {}
+    state.dlAudioSrc = null;
+  }
+  if (state.dlAudioDest) { state.dlAudioDest = null; }
+  if (state.dlAudioCtx) {
+    try { state.dlAudioCtx.close(); } catch(e) {}
+    state.dlAudioCtx = null;
+  }
+  state.dlRecordedBlob = null;
+}
+
+/* 主下载循环: 拉 m3u8 → 解析分片 → 下载新分片 → VOD完成或直播轮询 */
+function downloadLoop(m3u8Url) {
+  if (!state.dlActive) return;
+
+  var signal = state.dlAborter ? state.dlAborter.signal : null;
+  var fetchUrl = state.dlProxyBase ? (state.dlProxyBase + encodeURIComponent(m3u8Url)) : m3u8Url;
+
+  fetch(fetchUrl, { signal: signal })
+    .then(function(r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.text();
+    })
+    .then(function(content) {
+      if (!state.dlActive) return;
+
+      var segments = parseM3U(content, m3u8Url);
+      if (!segments || !segments.length) {
+        console.warn("[MyTV] No TS segments found in playlist");
+        schedulePoll(m3u8Url, 3000);
+        return;
+      }
+
+      var isLive = !/#EXT-X-ENDLIST/i.test(content);
+
+      var newSegments = [];
+      for (var i = 0; i < segments.length; i++) {
+        var segUrl = segments[i];
+        if (!state.dlSeenUrls[segUrl]) {
+          newSegments.push(segUrl);
+          state.dlSeenUrls[segUrl] = true;
+        }
+      }
+
+      state.dlTotalSegments = Math.max(state.dlTotalSegments, segments.length);
+
+      if (newSegments.length === 0) {
+        if (isLive) {
+          schedulePoll(m3u8Url, 3000);
+        } else {
+          stopDownload(true);
+        }
+        return;
+      }
+
+      downloadNextBatch(newSegments, 0, signal, function(allFailed) {
+        if (!state.dlActive) return;
+
+        updateDlProgress();
+
+        if (isLive) {
+          var delay = allFailed ? 4000 : 2000;
+          schedulePoll(m3u8Url, delay);
+        } else {
+          if (state.dlDownloadedSegments >= state.dlTotalSegments) {
+            stopDownload(true);
+          } else {
+            schedulePoll(m3u8Url, 1000);
+          }
+        }
+      });
+    })
+    .catch(function(err) {
+      if (!state.dlActive) return;
+      if (err.name === "AbortError") return;
+
+      console.error("[MyTV] m3u8 fetch failed:", err.message);
+      if (state.dlActive) {
+        schedulePoll(m3u8Url, 5000);
+      }
+    });
+}
+
+/* 逐个下载分片（串行，避免压垮服务器）
+   返回: callback(allFailed)  - allFailed=true 表示所有分片都下载失败 */
+function downloadNextBatch(urls, idx, signal, callback, allFailed) {
+  if (allFailed === undefined) allFailed = true;
+  if (idx >= urls.length || !state.dlActive) {
+    callback(allFailed);
+    return;
+  }
+
+  var url = urls[idx];
+  if (!url || url.length < 4) {
+    state.dlDownloadedSegments++;
+    downloadNextBatch(urls, idx + 1, signal, callback, allFailed);
+    return;
+  }
+
+  var fetchUrl = state.dlProxyBase ? (state.dlProxyBase + encodeURIComponent(url)) : url;
+
+  fetch(fetchUrl, { signal: signal })
+    .then(function(r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.arrayBuffer();
+    })
+    .then(function(buf) {
+      if (!state.dlActive) return;
+      state.dlChunks.push({ url: url, data: new Uint8Array(buf) });
+      state.dlDownloadedSegments++;
+      updateDlProgress();
+      // 至少有一个成功 → allFailed = false
+      downloadNextBatch(urls, idx + 1, signal, callback, false);
+    })
+    .catch(function(err) {
+      if (!state.dlActive) return;
+      if (err.name === "AbortError") return;
+
+      state.dlFailedSegments++;
+      console.warn("[MyTV] Segment download failed (" + (idx+1) + "/" + urls.length + "):", err.message);
+      updateDlProgress();
+      downloadNextBatch(urls, idx + 1, signal, callback, allFailed);
+    });
+}
+
+/* 安排下次轮询 m3u8 */
+function schedulePoll(m3u8Url, delay) {
+  if (!state.dlActive) return;
+  if (state.dlPollTimerId) clearTimeout(state.dlPollTimerId);
+  state.dlPollTimerId = setTimeout(function() {
+    state.dlPollTimerId = null;
+    downloadLoop(m3u8Url);
+  }, delay || 3000);
+}
+
+/* 解析 m3u8 播放列表，返回 TS 分片 URL 数组 */
+function parseM3U(content, baseUrl) {
+  var lines = content.split(/\r?\n/);
+  var segments = [];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line || line[0] === "#") continue;
+    if (/\.ts(\?.*)?$/i.test(line)) {
+      segments.push(resolveUrl(line, baseUrl));
+    }
+  }
+  return segments;
+}
+
+/* 解析相对 URL */
+function resolveUrl(url, base) {
+  if (/^https?:\/\//i.test(url)) return url;
+  if (url[0] === "/") {
+    var m = base.match(/^(https?:\/\/[^\/]+)/);
+    return (m ? m[1] : "") + url;
+  }
+  var baseClean = base.replace(/\?.*$/, "").replace(/\/[^\/]*$/, "");
+  while (/^\.\.\//.test(url)) {
+    url = url.substring(3);
+    var idx = baseClean.lastIndexOf("/");
+    if (idx === -1) break;
+    baseClean = baseClean.substring(0, idx);
+  }
+  return baseClean + "/" + url;
+}
+
+/* 合并所有分片并触发下载 */
+function mergeAndSave() {
+  if (!state.dlChunks.length) {
+    showToast("没重试锟截碉拷第片重试", "warn"); return;
+  }
+
+  try {
+    // 锟较诧拷第共 Uint8Array
+    var totalSize = 0;
+    for (var i = 0; i < state.dlChunks.length; i++) {
+      totalSize += state.dlChunks[i].data.length;
+    }
+
+    var merged = new Uint8Array(totalSize);
+    var offset = 0;
+    for (var i = 0; i < state.dlChunks.length; i++) {
+      merged.set(state.dlChunks[i].data, offset);
+      offset += state.dlChunks[i].data.length;
+    }
+
+    var blob = new Blob([merged], { type: "video/mp2t" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.style.display = "none";
+    var chName = (state.curChanIdx >= 0) ? state.allChannels[state.curChanIdx].name : "重试";
+    a.href = url;
+    a.download = "MTV_" + chName.replace(/[\/\\:*?"<>|]/g, "_") + "_" +
+      new Date().toISOString().slice(0,19).replace(/:/g,"-") + ".ts";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+
+    var dur = state.dlStartTime ? Math.round((Date.now() - state.dlStartTime) / 1000) : 0;
+    var min = Math.floor(dur / 60), sec = dur % 60;
+    var sizeMB = (totalSize / 1048576).toFixed(1);
+    showToast("锟窖憋拷第(" + sizeMB + "MB): " + a.download + " (" + min + "第" + sec + "第)", "success");
+  } catch(e) {
+    console.error("[MyTV] Merge failed:", e);
+    showToast("锟较诧拷第片失第: " + e.message, "error");
+  }
+}
+
+/* 更新下载进度 */
+function updateDlProgress() {
+  var el = $("dl-progress");
+  if (!el) return;
+  if (state.dlMode === "record") {
+    // 录制模式: 显示已录制数据大小
+    var totalSize = 0;
+    for (var i = 0; i < state.dlChunks.length; i++) {
+      totalSize += (state.dlChunks[i] && state.dlChunks[i].size) || 0;
+    }
+    var mb = (totalSize / 1048576).toFixed(1);
+    el.textContent = " " + mb + "MB";
+  } else if (state.dlDownloadedSegments > 0) {
+    var total = state.dlTotalSegments || "?";
+    var txt = " (" + state.dlDownloadedSegments + "/" + total + ")";
+    if (state.dlFailedSegments > 0) txt += " 失败" + state.dlFailedSegments;
+    el.textContent = txt;
+  } else if (state.dlFailedSegments > 0) {
+    el.textContent = " (0/" + (state.dlTotalSegments || "?") + ") 失败" + state.dlFailedSegments;
+  } else {
+    el.textContent = "";
+  }
+}
+
+function updateDlTimer() {
+  if (!state.dlStartTime) return;
+  var dur = Math.round((Date.now() - state.dlStartTime) / 1000);
+  var min = ("0" + Math.floor(dur / 60)).slice(-2);
+  var sec = ("0" + (dur % 60)).slice(-2);
+  $("rec-timer").textContent = min + ":" + sec;
+}
+
+/* ---------- Toast ---------- */
+var toastTimer = null;
+function showToast(msg, type) {
+  var el = $("toast"); el.textContent = msg;
+  el.className = "show" + (type ? " " + type : "");
+  clearTimeout(toastTimer); toastTimer = setTimeout(function() { el.className = ""; }, 3000);
+}
+
+/* ---------- 时钟 ---------- */
+function updateClock() {
+  var d = new Date();
+  var t = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2) + ":" + ("0" + d.getSeconds()).slice(-2);
+  $("info-time").textContent = t; $("ov-time").textContent = t.substring(0, 5);
+}
+setInterval(updateClock, 1000); updateClock();
+
+/* ---------- 快捷键切换频道 ---------- */
+function restoreLastChannel() {
+  try {
+    var idx = parseInt(localStorage.getItem("mytv_lastch") || "-1", 10);
+    if (idx >= 0 && idx < state.allChannels.length) {
+      var ch = state.allChannels[idx];
+      var gi = -1;
+      for (var i = 0; i < state.groups.length; i++) { if (state.groups[i].channels.indexOf(ch) !== -1) { gi = i; break; } }
+      if (gi !== -1) { state.curGroupIdx = gi; renderGroupNav(); }
+      setTimeout(function() { playChannelByGlobalIdx(idx); }, 300);
+    }
+  } catch(e) {}
+}
+
+/* ---------- 编码检测 ---------- */
+/* 编码兼容性检测 */
+function getCodecLabel(codec) {
+  if (!codec) return "?";
+  var c = codec.toLowerCase();
+  // H.264/AVC
+  if (c.indexOf("avc1") >= 0 || c.indexOf("avc3") >= 0 || c.indexOf("h264") >= 0) {
+    var m = c.match(/avc[13]\.([0-9A-F]{2})/i);
+    if (m) {
+      var lv = parseInt(m[1], 16);
+      if (lv >= 0x64) return "H.264 High";
+      if (lv >= 0x42) return "H.264 Main";
+      return "H.264";
+    }
+    return "H.264";
+  }
+  // HEVC/H.265
+  if (c.indexOf("hvc1") >= 0 || c.indexOf("hev1") >= 0 || c.indexOf("hevc") >= 0 || c.indexOf("h265") >= 0) return "HEVC";
+  // AV1
+  if (c.indexOf("av01") >= 0 || c.indexOf("av1") >= 0) return "AV1";
+  // VP9
+  if (c.indexOf("vp09") >= 0 || c.indexOf("vp9") >= 0) return "VP9";
+  // VP8
+  if (c.indexOf("vp8") >= 0 || c.indexOf("vp08") >= 0) return "VP8";
+  // MPEG-4 Visual
+  if (c.indexOf("mp4v") >= 0) return "MP4V";
+  // 第取前8锟街凤拷重试
+  return codec.substring(0, 10);
+}
+
+/* 编码兼容性检测 */
+function isCodecSupported(codec) {
+  if (!codec || typeof MediaSource === "undefined" || !MediaSource.isTypeSupported) return null; // 锟睫凤拷锟叫讹拷
+  // 重试模第MIME检测
+  var mimes = [
+    'video/mp4; codecs="' + codec + '"',
+    'video/webm; codecs="' + codec + '"'
+  ];
+  for (var i = 0; i < mimes.length; i++) {
+    try { if (MediaSource.isTypeSupported(mimes[i])) return true; } catch(e) {}
+  }
+  return false;
+}
+
+/* 从 HLS manifest 中提取编码信息 */
+function saveLineCodec(ch, codec) {
+  if (!codec) return;
+  var sKey = ch.group + "|" + ch.name;
+  if (!state.channelStatus[sKey]) state.channelStatus[sKey] = { lines: [] };
+  var arr = state.channelStatus[sKey].lines;
+  while (arr.length <= state.curLineIdx) arr.push({});
+  arr[state.curLineIdx].codec = codec;
+  arr[state.curLineIdx].codecUnsupported = (isCodecSupported(codec) === false);
+  renderBottomLines();
+}
+function escHtml(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function escAttr(s) { return s.replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/"/g,"&quot;"); }
+
+/* ---------- URL解析辅助函数 ---------- */
+$("url-input").addEventListener("keydown", function(e) { if (e.key === "Enter") loadFromUrl(); });
+
+/* ---------- HTML转义工具函数 ---------- */
+$("settings-panel").addEventListener("click", function(e) { if (e.target === this) closeSettings(); });
+
+/* ---------- 初始化 ---------- */
+loadConfig(); loadFavorites(); loadVolume();
+
+/* ---------- 自动加载上次URL ---------- */
+(function() {
+  var lastUrl = localStorage.getItem("mytv_lasturl");
+  if (state.cfg.url && !lastUrl) {
+    $("url-input").value = state.cfg.url;
+  }
+})();
+
+/* ---------- 代理可用性检测 ---------- */
+(function() {
+  if (!state.cfg.proxy.trim()) {
+    checkProxy().then(function(proxyBase) {
+      if (proxyBase) {
+        state.cfg.proxy = proxyBase;
+        localStorage.setItem("mytv_config", JSON.stringify(state.cfg));
+        $("cfg-proxy").value = proxyBase;
+      }
+    });
+  }
+})();
+
+/* ---------- 移动端默认收起频道列表 ---------- */
+(function() {
+  if (window.matchMedia("(max-width: 768px)").matches) {
+    $("main").classList.add("sidebar-hidden");
+    $("sidebar-toggle-bar").title = "展个频道第";
+  }
+  // 播放中锟叫伙拷时重试状态
+  window.addEventListener("resize", function() {
+    var m = $("main"); var b = $("sidebar-toggle-bar");
+    m.classList.remove("sidebar-visible"); // 锟藉覆第态
+    if (window.matchMedia("(max-width: 768px)").matches) {
+      if (!m.classList.contains("sidebar-hidden")) { m.classList.add("sidebar-hidden"); b.title = "展个频道第"; }
+    } else {
+      m.classList.remove("sidebar-hidden");
+      b.title = "第个频道第";
+    }
+  });
+})();
+
+/* ---------- 侧边栏收起/展开 ---------- */
+function toggleSidebar() {
+  var main = $("main");
+  var bar = $("sidebar-toggle-bar");
+  var isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+  if (isMobile) {
+    // 锟狡讹拷锟剿ｏ拷重试模式第共 sidebar-visible
+    var visible = main.classList.toggle("sidebar-visible");
+    if (visible) {
+      main.classList.remove("sidebar-hidden");
+      bar.title = "第个频道第";
+    } else {
+      main.classList.add("sidebar-hidden");
+      bar.title = "展个频道第";
+    }
+  } else {
+    // 重试耍播放中第示/重试
+    main.classList.toggle("sidebar-hidden");
+    if (main.classList.contains("sidebar-hidden")) { bar.title = "展个频道第"; }
+    else { bar.title = "第个频道第"; }
+  }
+}
+
+/* ---------- 初始化 ---------- */
+</script>
+</body>
+</html>

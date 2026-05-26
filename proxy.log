@@ -1,0 +1,6 @@
+[代理] CORS 代理已启动: http://127.0.0.1:8799
+[代理] 用法: http://127.0.0.1:8799/?url=ENCODED_URL
+[代理] 端口文件: D:\AI自制工具\便携电视播放器\.proxy_port
+[代理] 按 Ctrl+C 停止
+[代理] GET /?url=https%3A%2F%2Fgh-proxy.com%2Fraw.githubusercontent.com%2Fsuxuang%2FmyIPTV%2Fmain%2Fipv4.m3u HTTP/1.1
+^C
