@@ -1,6 +1,8 @@
 # 便携电视播放器 (Portable TV Player)
 
 纯单文件 HTML IPTV 播放器，支持 M3U/TXT 直播源，双击即用。
+播放功能仅需html文件
+下载功能需要所有文件下载
 
 ## 功能特性
 
