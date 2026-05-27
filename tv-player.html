@@ -516,7 +516,7 @@
     <div id="group-nav"></div>
     <div id="channel-list">
       <div style="padding:40px 16px;text-align:center;color:var(--text-muted);font-size:13px;line-height:1.8">
-        第锟饺硷拷共 M3U 重试源<br>第锟较达拷第共 .m3u 锟侥硷拷
+                代理模式 M3U 直播源<br>代理模式 .m3u 文件
       </div>
     </div>
   </div>
@@ -598,7 +598,7 @@
     <div class="form-group">
       <label>CORS 代理地址（如无需代理可留空，双击 start.bat 即可生效）</label>
       <input type="text" id="cfg-proxy" placeholder="http://127.0.0.1:8799/?url=">
-      <div class="form-hint">锟狡硷拷第双共 start.bat 锟皆讹拷播放中锟截达拷第<br>播放中址第锟皆讹拷第为 http://127.0.0.1:8799/?url=</div>
+      <div class="form-hint">代理双双 start.bat 代理播放中代理<br>播放中地址代理为 http://127.0.0.1:8799/?url=</div>
     </div>
     <div class="form-group">
       <label>视频缩放模式</label>
@@ -617,8 +617,8 @@
       <label class="toggle"><input type="checkbox" id="cfg-remember" checked><span class="toggle-slider"></span></label>
     </div>
     <div class="settings-actions">
-      <button class="btn btn-ghost" onclick="closeSettings()">取第</button>
-      <button class="btn btn-primary" onclick="saveSettings()">第锟芥并锟截憋拷</button>
+      <button class="btn btn-ghost" onclick="closeSettings()">取消收藏</button>
+      <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
     </div>
   </div>
 </div>
@@ -627,7 +627,7 @@
 <script>
 
 /* ================================================================
-   锟揭的碉拷共 MyTV - IPTV重试共 JS重试
+   本地 MyTV - IPTV解析 JS重试
    ================================================================ */
 var state = {
   groups: [], allChannels: [],
@@ -706,20 +706,20 @@ function saveFavorites() { localStorage.setItem("mytv_favorites", JSON.stringify
 /* ---------- M3U / TVbox / TXT 解析 ---------- */
 function parseIPTV(text) {
   text = text.trim();
-  // 锟狡筹拷 BOM 头
+  // 检测 BOM 头
   if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-  // 全锟角讹拷第统一转检测
+  // 全部频道统一转检测
   text = text.replace(/\uff0c/g, ",");
   // 检测 M3U 第式
   if (text.includes("#EXTM3U") || text.includes("#EXTINF")) return parseM3UFormat(text);
-  // 检测 TXT/TVbox 第式第#genre# 重试共 共 第锟脚分革拷 共 锟杰碉拷第锟街革拷第
+  // 检测 TXT/TVbox 格式 #genre# 说明：兼容 TXT 和 TVbox 格式
   if (text.includes("#genre#") || isTxtFormat(text)) return parseTxtFormat(text);
-  // 第锟阶ｏ拷锟饺筹拷第TXT锟劫筹拷第M3U
+  // 支持格式检测TXT转换M3U
   var r = parseTxtFormat(text);
   return r.length ? r : parseM3UFormat(text);
 }
 
-/* 锟叫讹拷锟角凤拷为 TXT 第式个频道第,URL 共 频重试|URL 模式共 */
+/* 解析为 TXT 格式频道，URL 共 频道|URL 模式 */
 function isTxtFormat(text) {
   var lines = text.split("\n"), commaCount = 0, pipeCount = 0, total = 0;
   for (var i = 0; i < lines.length; i++) {
@@ -770,8 +770,8 @@ function parseTxtFormat(text) {
       continue;
     }
 
-    // 播放中第锟叫ｏ拷锟睫讹拷锟脚★拷第URL重试注锟酵★拷第#genre#第
-    // 锟叫讹拷播放中锟睫讹拷锟脚★拷锟睫管碉拷播放中重试URL重试一第个频道第
+    // 播放中地址URL注意#genre#
+    // 解析播放中URL重试一个频道
     if (line.indexOf(",") === -1 && line.indexOf("|") === -1 && !isStreamUrl(line) && !line.startsWith("#")) {
       if (i + 1 < lines.length) {
         var nextLine = lines[i + 1].trim();
@@ -791,7 +791,7 @@ function parseTxtFormat(text) {
     var urlPart = line.substring(ci + 1).trim();
     if (!name || !urlPart) continue;
 
-    // 播放中锟铰凤拷检测 # 锟街革拷第
+    // 解析TXT格式检测 # 分隔符
     var rawUrls = urlPart.split("#");
     var urls = [];
     for (var u = 0; u < rawUrls.length; u++) {
@@ -809,7 +809,7 @@ function parseTxtFormat(text) {
   return buildGroups(groupMap);
 }
 
-/* 锟叫讹拷锟角凤拷重试媒第URL */
+/* 解析频道重试媒体URL */
 function isStreamUrl(s) {
   return /^(https?|rtsp|rtp|rtmp|p2p|mitv|tvbus|qsp|flv|mms|mmsh)\s*:\/\//i.test(s) ||
          s.startsWith("http") || s.startsWith("rtsp") || s.startsWith("rtp");
@@ -842,13 +842,13 @@ function buildGroups(groupMap) {
 function loadFromUrl() {
   var url = $("url-input").value.trim();
   if (!url) { showToast("播放中直播源 URL", "warn"); return; }
-  showLoading(true, "第锟节硷拷第检测...");
+  showLoading(true, "正在检测...");
   tryFetch(url);
 }
 
-/* 统一第锟截ｏ拷锟饺硷拷獗撅拷卮检测 共 重试模式 共 直播第共 */
+/* 统一代理检测 重试模式 直播源 */
 function tryFetch(url) {
-  // 锟饺硷拷锟経RL锟角凤拷播放中直播个频道
+  // 代理URL播放中直播个频道
   if (/\.(m3u8|ts|mp4|flv)(\?|$|#)/i.test(url)) {
     processStreamUrl(url);
     return;
@@ -857,8 +857,8 @@ function tryFetch(url) {
   // 文件URL可能包含单个视频
   checkProxy().then(function(proxyBase) {
     if (proxyBase) {
-      // 第式1: 通重试锟截达拷第
-      showLoading(true, "第锟截达拷播放中第...");
+      // 方式1: 通过代理
+      showLoading(true, "通过代理播放中...");
       var fetchUrl = proxyBase + encodeURIComponent(url);
       return fetch(fetchUrl, { cache: "no-cache", signal: AbortSignal.timeout(25000) })
         .then(function(r) {
@@ -869,12 +869,12 @@ function tryFetch(url) {
           processM3U(text, url);
         })
         .catch(function(proxyErr) {
-          // 重试失共 共 第锟剿碉拷直播
-          showLoading(true, "播放中第锟矫ｏ拷重试直播...");
+          // 代理失败，改用直接请求
+          showLoading(true, "正在通过直连播放...");
           return fetchDirect(url);
         });
     } else {
-      // 第式2: 锟睫达拷重试直播重试
+      // 方式2: 直接请求直播源
       showLoading(true, "直播播放中...");
       return fetchDirect(url);
     }
@@ -891,7 +891,7 @@ function tryFetch(url) {
   });
 }
 
-/* 第獗撅拷卮播放中第锟剿口筹拷锟皆ｏ拷 */
+/* 全局播放中状态管理 */
 function checkProxy() {
   var ports = [8799, 8800, 8801, 8802];
   function tryPort(idx) {
@@ -907,7 +907,7 @@ function checkProxy() {
   return tryPort(0);
 }
 
-/* 直播第共 */
+/* 直播源共 */
 function fetchDirect(url) {
   return fetch(url, { cache: "no-cache", signal: AbortSignal.timeout(20000) })
     .then(function(r) {
@@ -920,26 +920,26 @@ function fetchDirect(url) {
     .catch(function(err) {
       var msg = (err && err.message) || "";
       if (msg.indexOf("Failed to fetch") >= 0 || msg.indexOf("NetworkError") >= 0) {
-        throw new Error("直播播放中第检测(CORS)重试双第start.bat播放中锟截达拷第");
+        throw new Error("直播播放中检测(CORS)重试双击start.bat播放中代理");
       }
       throw err;
     });
 }
 function loadFromFile(ev) {
   var file = ev.target.files[0]; if (!file) return;
-  showLoading(true, "第锟节讹拷取 " + file.name + "...");
+  showLoading(true, "正在读取 " + file.name + "...");
   var reader = new FileReader();
   reader.onload = function(e) { processM3U(e.target.result, file.name); ev.target.value = ""; };
-  reader.onerror = function() { showLoading(false); showToast("锟侥硷拷第取失第", "error"); };
+  reader.onerror = function() { showLoading(false); showToast("文件读取失败", "error"); };
   reader.readAsText(file, "UTF-8");
 }
 
-/* 直播个频道第址第共 (m3u8/ts/mp4/flv第) */
+/* 处理直播频道地址 (m3u8/ts/mp4/flv) */
 function processStreamUrl(url) {
-  var name = url.split("/").pop().split("?")[0] || "直播第";
+  var name = url.split("/").pop().split("?")[0] || "直播源";
   var nm = url.match(/[?&]name=([^&]+)/i);
   if (nm) name = decodeURIComponent(nm[1]);
-  state.groups = [{ name: "直锟接诧拷第", channels: [{ name: name, urls: [url], index: 1, group: "直锟接诧拷第" }] }];
+  state.groups = [{ name: "直播源", channels: [{ name: name, urls: [url], index: 1, group: "直播源" }] }];
   state.allChannels = state.groups[0].channels;
   state.curGroupIdx = 0; state.curChanIdx = 0; state.curLineIdx = 0;
   try { localStorage.setItem("mytv_lasturl", url); } catch(e) {}
@@ -949,19 +949,19 @@ function processStreamUrl(url) {
 }
 
 function processM3U(text, sourceName) {
-  // 重试欠锟轿狧LS媒第锟藉单第个频道锟叫憋拷第
+  // 重试修复HLS媒体流单频道播放
   if (text.indexOf("#EXT-X-STREAM-INF") >= 0 || text.indexOf("#EXT-X-TARGETDURATION") >= 0) {
     showLoading(false);
     var url = $("url-input").value.trim() || sourceName;
     if (url && /^https?:\/\//.test(url)) {
       processStreamUrl(url);
     } else {
-      showToast("第獾紿LS第媒第锟藉单第锟诫将第URL直播粘播放中播放中", "warn");
+      showToast("未检测到HLS媒体流，可能该URL是直播源列表，请重新粘贴M3U/TXT内容", "warn");
     }
     return;
   }
   var groups = parseIPTV(text);
-  if (!groups.length) { showLoading(false); showToast("未播放中锟轿猴拷频重试支锟街革拷式: M3U(#EXTINF)第TXT(频重试,URL)第TVbox(#genre#)重试锟経RL播放中直播个频道 / 第要播放中第", "error"); return; }
+  if (!groups.length) { showLoading(false); showToast("未识别到直播源，请检查格式: M3U(#EXTINF) TXT(频道,URL) TVbox(#genre#) 或直链URL", "error"); return; }
   state.groups = groups;
   state.allChannels = groups.reduce(function(a, g) { return a.concat(g.channels); }, []);
   state.curGroupIdx = 0; state.curChanIdx = -1; state.curLineIdx = 0;
@@ -996,31 +996,31 @@ function renderChannelList() {
   var list = $("channel-list"), chans = getCurChans();
   if (!chans.length) {
     list.innerHTML = '<div style="padding:30px 16px;text-align:center;color:var(--text-muted);font-size:13px">' +
-      (state.curGroupIdx === -1 ? "重试收藏频重试共 F 已收藏" : "锟矫凤拷重试个频道") + '</div>'; return;
+      (state.curGroupIdx === -1 ? "已收藏频道 (按 F 收藏)" : "没有可用频道") + '</div>'; return;
   }
   var html = "";
   chans.forEach(function(ch, li) {
     var gi = state.allChannels.indexOf(ch), isActiveGroup = gi === state.curChanIdx;
     var isFav = state.favorites.has(ch.name);
     var sKey = ch.group + "|" + ch.name, st = state.channelStatus[sKey];
-    // 频播放中状态第
+    // 频道播放状态
     var sumCls = getChSummaryCls(st);
     html += '<div class="channel-item' + (isActiveGroup ? " active" : "") + '" data-gidx="' + gi + '" onclick="playChannelByGlobalIdx(' + gi + ')">' +
-      '<span class="ch-status' + sumCls + '" title="' + (sumCls === " ok" ? "锟叫匡拷条线路" : sumCls === " err" ? "全第失第" : sumCls === " testing" ? "第检测" : "未检测") + '"></span>' +
+      '<span class="ch-status' + sumCls + '" title="' + (sumCls === " ok" ? "可用条线路" : sumCls === " err" ? "全部失败" : sumCls === " testing" ? "检测中" : "未检测") + '"></span>' +
       '<span class="ch-index">' + ch.index + '</span>' +
       '<span class="ch-name">' + escHtml(ch.name) + '</span>' +
       '<span class="ch-fav' + (isFav ? " is-fav" : "") + '" onclick="event.stopPropagation();toggleFavoriteByName(\'' + escAttr(ch.name) + '\')">' + (isFav ? "*" : "+") + '</span>' +
       '</div>';
   });
   list.innerHTML = html;
-  // 播放中第前第
+  // 滚动到当前频道
   var curLi = chans.findIndex(function(c) { return state.allChannels.indexOf(c) === state.curChanIdx; });
   if (curLi !== -1) {
     var items = list.querySelectorAll(".channel-item");
     if (items[curLi]) items[curLi].scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
 }
-/* 频播放中状态重试一线路锟缴诧拷第共 / 条线路第锟接成癸拷第全重试失锟杰★拷共 / 全失锟杰★拷共 / 重试小检测 / 未重试共 */
+/* 获取频道状态汇总CSS类名 */
 function getChSummaryCls(st) {
   if (!st || !st.lines || !st.lines.length) return "";
   var anyOk = false, allDone = true, anyTesting = false, anyFailed = false, anyReachable = false, anyPlayFailed = false;
@@ -1041,7 +1041,7 @@ function getChSummaryCls(st) {
   return "";
 }
 
-/* 锟阶诧拷线路播放中第染 */
+/* 渲染线路播放中第染 */
 function renderBottomLines() {
   var container = $("bottom-lines");
   if (state.curChanIdx < 0 || !state.allChannels.length) { container.innerHTML = ""; return; }
@@ -1071,9 +1071,9 @@ function renderBottomLines() {
     if (ls.playFailed && ls.failReason) {
       var reasonLabel = getRepairLabel(ls.failReason);
       var rc = ls.repairCount || 0;
-      failInfo = '<span class="bl-reason" title="' + escAttr("失第原第: " + reasonLabel + (ls.failDetail ? " (" + ls.failDetail + ")" : "") + " | 锟窖筹拷第锟睫革拷" + rc + "第") + '">' + escHtml(reasonLabel) + '</span>';
+      failInfo = '<span class="bl-reason" title="' + escAttr("失败原第: " + reasonLabel + (ls.failDetail ? " (" + ls.failDetail + ")" : "") + " | 重试次数策略" + rc + "第") + '">' + escHtml(reasonLabel) + '</span>';
       if (rc < 3) {
-        failInfo += '<span class="bl-repair" onclick="event.stopPropagation();manualRepairLine(' + chIdx + ',' + i + ')" title="重试修复中第锟铰诧拷第">?</span>';
+        failInfo += '<span class="bl-repair" onclick="event.stopPropagation();manualRepairLine(' + chIdx + ',' + i + ')" title="点击修复此线路">?</span>';
       }
     }
     html += '<div class="bottom-line-item' + (isCur ? " active" : "") + '" onclick="playLineByGlobalIdx(' + state.curChanIdx + ',' + i + ')">' +
@@ -1095,7 +1095,7 @@ function testAllChannels() {
   if (detectRunning) {
     detectAborted = true; showToast("已停止检测...", "warn"); return;
   }
-  if (!state.allChannels.length) { showToast("第锟饺硷拷第直播源", "warn"); return; }
+  if (!state.allChannels.length) { showToast("第代理第直播源", "warn"); return; }
   startDetection(state.allChannels, "全个频道", undefined);
 }
 
@@ -1104,11 +1104,11 @@ function testGroupChannels(groupIdx) {
   if (detectRunning) { showToast("请先停止当前检测任务", "warn"); return; }
   if (groupIdx < 0 || groupIdx >= state.groups.length) return;
   var chans = state.groups[groupIdx].channels;
-  if (!chans.length) { showToast("锟矫凤拷第个频道", "warn"); return; }
+  if (!chans.length) { showToast("没有第个频道", "warn"); return; }
   startDetection(chans, state.groups[groupIdx].name, groupIdx);
 }
 
-/* 通锟矫硷拷第检测 */
+/* 通用检测 */
 function startDetection(channels, label, groupIdx) {
   detectAborted = false; detectRunning = true;
   state.detectingGroupIdx = groupIdx;
@@ -1141,7 +1141,7 @@ function startDetection(channels, label, groupIdx) {
       }
       var url = ch.urls[liIdx];
       var curLi = liIdx; liIdx++;
-      // 第检测 playFailed 状态
+      // 检测 playFailed 状态
       var oldPf = arr[curLi].playFailed;
       testSingleUrl(url, function(result) {
         if (oldPf) result.playFailed = true;
@@ -1206,7 +1206,7 @@ function finishDetection(totalLines, label) {
       else if (ls[i].ok === false) fail++;
     }
   }
-  showToast((label || "检测") + "检测: " + ok + " 条可达, " + fail + " 第失第, 共 " + (totalLines || (ok + fail)) + " 条线路", fail ? "warn" : "success");
+  showToast((label || "检测") + "检测: " + ok + " 条可达, " + fail + " 第失败, 共 " + (totalLines || (ok + fail)) + " 条线路", fail ? "warn" : "success");
   detectAborted = false;
 }
 function playChannelByGlobalIdx(gi) {
@@ -1214,21 +1214,21 @@ function playChannelByGlobalIdx(gi) {
   state.curChanIdx = gi; state.curLineIdx = 0;
   var ch = state.allChannels[gi];
   playLine(ch, 0); renderChannelList(); renderBottomLines(); updateInfoBar();
-  if (state.cfg.remember) try { localStorage.setItem("mytv_lastch", gi); } catch(e) {}
+  if (state.cfg.remember) { try { localStorage.setItem("mytv_lastch", gi); } catch(e) {} try { localStorage.setItem("mytv_lastli", 0); } catch(e) {} }
 }
-/* 直锟接诧拷第指个频道指条线路 */
+/* 直播源指定频道指定条线路 */
 function playLineByGlobalIdx(gi, li) {
   if (gi < 0 || gi >= state.allChannels.length) return;
   var ch = state.allChannels[gi];
   if (li < 0 || li >= ch.urls.length) return;
   state.curChanIdx = gi; state.curLineIdx = li;
-  // 锟矫伙拷锟街讹拷选共 共 重试薷重试
+  // 用户选择频道，开始重试
   var sKey = ch.group + "|" + ch.name;
   if (state.channelStatus[sKey] && state.channelStatus[sKey].lines && state.channelStatus[sKey].lines[li]) {
     state.channelStatus[sKey].lines[li].repairCount = 0;
   }
   playLine(ch, li); renderChannelList(); renderBottomLines(); updateInfoBar();
-  if (state.cfg.remember) try { localStorage.setItem("mytv_lastch", gi); } catch(e) {}
+  if (state.cfg.remember) { try { localStorage.setItem("mytv_lastch", gi); } catch(e) {} try { localStorage.setItem("mytv_lastli", li); } catch(e) {} }
 }
 function playLine(ch, li) {
   var url = ch.urls[li] || ch.urls[0]; state.curLineIdx = li;
@@ -1237,7 +1237,7 @@ function playLine(ch, li) {
   if (state.channelStatus[sKey] && state.channelStatus[sKey].lines && state.channelStatus[sKey].lines[li]) {
     state.channelStatus[sKey].lines[li].playFailed = false;
   }
-  // 第取修复中第
+  // 获取修复状态
   var repairStrat = state.repairStrategy;
   state.repairStrategy = null;
 
@@ -1247,13 +1247,13 @@ function playLine(ch, li) {
   destroyHls();
   clearTimeout(state.playTimeout);
 
-  // 锟叫讹拷锟角凤拷共 hls.js播放中第直播锟侥硷拷第式第共 hls.js
+  // 解析频道共 hls.js播放中第直播文件式第共 hls.js
   var isDirectFile = /\.(mp4|webm|ogg|flv|ts|avi|mov|mkv|wmv)(\?|$|#)/i.test(url);
   var useHls = window.Hls && Hls.isSupported() && !isDirectFile;
 
-  // 修复中锟皆革拷第
+  // 修复中策略说明
   if (repairStrat === "native") {
-    useHls = false; // 强第原重试锟脚ｏ拷重试hls.js第
+    useHls = false; // 强制禁用 hls.js
   }
 
   if (useHls) {
@@ -1266,7 +1266,7 @@ function playLine(ch, li) {
       levelLoadingMaxRetry: 2, levelLoadingRetryDelay: 1000
     };
     if (repairStrat === "relaxed") {
-      // 重试模式第锟接大缓筹拷重试锟截闭碉拷锟接迟★拷播放中第
+      // 重试模式大缓冲区超时播放中第
       hlsCfg = {
         enableWorker: false,
         lowLatencyMode: false,
@@ -1286,7 +1286,7 @@ function playLine(ch, li) {
     state.hls = hls;
     hls.loadSource(url); hls.attachMedia(videoEl);
     hls.on(Hls.Events.MANIFEST_PARSED, function(ev, data) {
-      // 第取播放中息
+      // 获取播放中信息
       var codec = "";
       if (data.levels && data.levels.length) {
         data.levels.forEach(function(lv) {
@@ -1310,7 +1310,7 @@ function playLine(ch, li) {
     });
     hls.on(Hls.Events.ERROR, function(ev, data) {
       if (!data.fatal) {
-        // 播放中第锟襟：伙拷第停第/第锟界抖共 共 第锟皆恢革拷
+        // 播放中状态：检测到卡顿/无信号时，自动恢复
         var isNetworkErr = data.type === Hls.ErrorTypes.NETWORK_ERROR;
         var isBufferStall = data.details === "bufferStalledError";
         if (isNetworkErr || isBufferStall) {
@@ -1327,7 +1327,7 @@ function playLine(ch, li) {
       handlePlayError(ch, reason, data.type + "/" + (data.details || "unknown"));
     });
     hls.on(Hls.Events.LEVEL_LOADED, function() {
-      // 片锟轿匡拷始第锟截ｏ拷锟接筹拷第锟脚癸拷播放中锟姐够时锟戒）
+      // 片段开始通过连接超时播放中足够时戒）
       resetPlaybackWatchdog(ch);
     });
   } else {
@@ -1335,7 +1335,7 @@ function playLine(ch, li) {
     videoEl.crossOrigin = "anonymous";
     videoEl.src = url;
     videoEl.load();
-    // 修复中第模式第锟接筹拷第锟脚癸拷
+    // 修复中第模式第连接第超时
     if (repairStrat === "retry" || repairStrat === "native") {
       state.playTimeout = setTimeout(function() {
         if (state.curChanIdx >= 0 && (!videoEl.playing || !videoEl.currentTime)) {
@@ -1347,7 +1347,7 @@ function playLine(ch, li) {
       startPlaybackWatchdog(ch);
     }
     videoEl.play().catch(function(e) {
-      // play() 第锟杰撅拷通重试锟皆讹拷第锟脚诧拷锟皆ｏ拷重试媒第检测
+      // play() 失败后通过重试策略进行媒体检测
       // 重试没第呀播放中播放中第默重试
       if (e.name === "NotAllowedError") {
         console.warn("[MyTV] Autoplay blocked by browser policy");
@@ -1359,7 +1359,7 @@ function playLine(ch, li) {
   updateOverlay(ch);
 }
 
-/* 播放超时第锟脚癸拷第12重试未第始第共 共 锟皆讹拷条线路 */
+/* 播放超时监控，连接12秒未开始播放则切换线路 */
 function startPlaybackWatchdog(ch) {
   clearTimeout(state.playTimeout);
   state.playTimeout = setTimeout(function() {
@@ -1379,7 +1379,7 @@ function resetPlaybackWatchdog(ch) {
   }, 18000);
 }
 
-/* 个频道锟诫不第锟捷达拷播放中重试锟睫伙拷共 */
+/* 处理编解码错误，自动切换下一条线路 */
 function handleCodecError(ch) {
   clearTimeout(state.playTimeout);
   clearTimeout(state.videoCheckTimer);
@@ -1387,7 +1387,7 @@ function handleCodecError(ch) {
   markLinePlayFailed(ch);
   showLoading(false);
 
-  // 锟饺筹拷第修复中原重试锟脚匡拷第支第HEVC重试Safari第
+  // 尝试修复当前线路，不支持HEVC/Safari
   var sKey = ch.group + "|" + ch.name, ls = (state.channelStatus[sKey] && state.channelStatus[sKey].lines) || [];
   var curLs = ls[state.curLineIdx] || {};
   if (!curLs.repairCount || curLs.repairCount === 0) {
@@ -1396,7 +1396,7 @@ function handleCodecError(ch) {
 
   if (state.cfg.autoswitch && state.curLineIdx < ch.urls.length - 1) {
     var nl = state.curLineIdx + 1;
-    showToast("线路" + (state.curLineIdx + 1) + " 个频道锟诫不重试(重试HEVC)第锟叫伙拷线路" + (nl + 1), "warn");
+    showToast("线路" + (state.curLineIdx + 1) + " 不支持(HEVC), 切换线路" + (nl + 1), "warn");
     setTimeout(function() { playLine(ch, nl); }, 500);
   } else {
     setStatusTag("编码不兼容", "err");
@@ -1404,7 +1404,7 @@ function handleCodecError(ch) {
   }
 }
 
-/* 第堑锟角帮拷锟铰凤拷第锟绞э拷埽重试锟絆K第锟睫凤拷第锟脚★拷第色共 */
+/* 标记当前线路播放失败 */
 function markLinePlayFailed(ch) {
   var sKey = ch.group + "|" + ch.name;
   if (!state.channelStatus[sKey]) state.channelStatus[sKey] = { lines: [] };
@@ -1418,22 +1418,22 @@ function handlePlayError(ch, reason, detail) {
   clearTimeout(state.playTimeout);
   // 播放成功时
   diagnosePlayFailure(ch, reason || "unknown", detail || "");
-  // 第堑锟角帮拷锟铰凤拷第锟绞э拷埽重试锟絆K第锟睫凤拷第锟脚★拷第色第
+  // 标记当前线路播放失败并尝试切换
   markLinePlayFailed(ch);
 
-  // 锟饺筹拷第修复中前线路第锟阶达拷失第锟皆讹拷锟睫革拷一锟轿ｏ拷
+  // 代理修复当前线路失败后，自动切换策略
   var sKey = ch.group + "|" + ch.name, ls = (state.channelStatus[sKey] && state.channelStatus[sKey].lines) || [];
   var curLs = ls[state.curLineIdx] || {};
   if (!curLs.repairCount || curLs.repairCount === 0) {
     if (tryRepairLine(ch, state.curLineIdx)) {
-      return; // 锟睫革拷锟窖达拷播放中重试锟叫伙拷
+      return; // 策略：优先修复，不切换
     }
   }
 
-  // 锟睫革拷失锟杰伙拷锟窖筹拷锟皆癸拷 共 锟叫伙拷线路
+  // 策略：修复失败后，自动切换线路
   if (state.cfg.autoswitch && state.curLineIdx < ch.urls.length - 1) {
     var nl = state.curLineIdx + 1;
-    showToast("线路" + (state.curLineIdx + 1) + "失第, 锟叫伙拷线路" + (nl + 1), "warn");
+    showToast("线路" + (state.curLineIdx + 1) + "失败, 切换线路" + (nl + 1), "warn");
     setTimeout(function() { playLine(ch, nl); }, 500);
   } else {
     showLoading(false); setStatusTag("全部失败", "err");
@@ -1459,7 +1459,7 @@ function getRepairLabel(reason) {
     case "timeout": return "播放超时";
     case "network": return "重试检测";
     case "hls_error": return "HLS错误";
-    case "media_error": return "媒第检测";
+    case "media_error": return "媒体检测";
     default: return "未知原因";
   }
 }
@@ -1485,16 +1485,16 @@ function tryRepairLine(ch, lineIdx) {
     // 编码修复：关闭hls.js用原生播放，部分浏览器支持HLS（如Safari）
     strategy = "native";
   } else if (reason === "hls_error") {
-    // HLS播放中锟矫匡拷播放中第锟皆ｏ拷锟劫伙拷第原第
+    // HLS错误，尝试宽松模式或切换原生
     strategy = count === 1 ? "relaxed" : "native";
   } else if (reason === "media_error") {
-    // 媒播放中第原播放中
+    // 媒体错误，切换到原生播放器
     strategy = "native";
   } else if (reason === "timeout") {
-    // 第时第锟接大缓筹拷重试锟皆ｏ拷第直播重试
+    // 超时错误，大缓冲区可能直播流
     strategy = count === 1 ? "relaxed" : "retry";
   } else {
-    // 重试/未知播放中锟皆ｏ拷第原第
+    // 其他/未知错误，尝试重试或切换
     strategy = count === 1 ? "retry" : "native";
   }
 
@@ -1507,13 +1507,13 @@ function tryRepairLine(ch, lineIdx) {
   return true;
 }
 
-/* 锟街讹拷重试修复中锟接碉拷重试钮共 */
+/* 手动修复当前线路按钮 */
 function manualRepairLine(gi, li) {
   if (gi < 0 || gi >= state.allChannels.length) return;
   var ch = state.allChannels[gi];
   if (li < 0 || li >= ch.urls.length) return;
   state.curChanIdx = gi; state.curLineIdx = li;
-  // 重试修复中重试锟矫伙拷锟街讹拷播放中播放中锟皆ｏ拷
+  // 手动修复，用户点击修复按钮触发
   var sKey = ch.group + "|" + ch.name;
   if (state.channelStatus[sKey] && state.channelStatus[sKey].lines && state.channelStatus[sKey].lines[li]) {
     state.channelStatus[sKey].lines[li].repairCount = 0;
@@ -1554,7 +1554,7 @@ document.addEventListener("mousemove", function() { if (state.curChanIdx >= 0) s
 /* ---------- Loading ---------- */
 function showLoading(show, text) {
   clearTimeout(state.loadingTimer);
-  if (show) { $("loading-text").textContent = text || "第锟节硷拷第..."; $("loading-mask").classList.add("show"); state.loadingTimer = setTimeout(function() { showLoading(false); }, 15000); }
+  if (show) { $("loading-text").textContent = text || "正在处理..."; $("loading-mask").classList.add("show"); state.loadingTimer = setTimeout(function() { showLoading(false); }, 15000); }
   else { $("loading-mask").classList.remove("show"); }
 }
 
@@ -1562,7 +1562,7 @@ function showLoading(show, text) {
 videoEl.addEventListener("playing", function() {
   clearTimeout(state.playTimeout);
   showLoading(false);
-  setStatusTag(state.repairStrategy ? "第锟睫革拷" : "直播第", "live");
+  setStatusTag(state.repairStrategy ? "第策略" : "直播源", "live");
   state.repairStrategy = null;
   // 播放成功后清除 playFailed 和 repair 状态
   if (state.curChanIdx >= 0) {
@@ -1591,7 +1591,7 @@ videoEl.addEventListener("waiting", function() {
   setStatusTag("播放中", "");
 });
 videoEl.addEventListener("stalled", function() {
-  // 重试停锟酵ｏ拷检测10第锟节伙拷没锟街革拷 共 播放中时第锟脚癸拷
+  // 重试停止检测10超时没结果 共 播放中时超时
   clearTimeout(state.playTimeout);
   state.playTimeout = setTimeout(function() {
     if (state.curChanIdx >= 0 && videoEl.paused && !videoEl.ended) {
@@ -1663,7 +1663,7 @@ function padLeft(s, n) { while (s.length < n) s = " " + s; return s; }
 /* ---------- 收藏 ---------- */
 function toggleFavorite() { if (state.curChanIdx >= 0) toggleFavoriteByName(state.allChannels[state.curChanIdx].name); }
 function toggleFavoriteByName(name) {
-  if (state.favorites.has(name)) { state.favorites.delete(name); showToast("第取第: " + name, "warn"); }
+  if (state.favorites.has(name)) { state.favorites.delete(name); showToast("取消收藏: " + name, "warn"); }
   else { state.favorites.add(name); showToast("已收藏: " + name, "success"); }
   saveFavorites(); updateInfoBar(); renderSidebar();
 }
@@ -1682,7 +1682,7 @@ function togglePip() {
   try {
     if (document.pictureInPictureElement) document.exitPictureInPicture();
     else videoEl.requestPictureInPicture();
-  } catch(e) { showToast("第锟叫伙拷播放中", "warn"); }
+  } catch(e) { showToast("第切换播放中", "warn"); }
 }
 
 /* ---------- 音量控制 ---------- */
@@ -2264,11 +2264,11 @@ function resolveUrl(url, base) {
 /* 合并所有分片并触发下载 */
 function mergeAndSave() {
   if (!state.dlChunks.length) {
-    showToast("没重试锟截碉拷第片重试", "warn"); return;
+    showToast("没重试代理设置片重试", "warn"); return;
   }
 
   try {
-    // 锟较诧拷第共 Uint8Array
+    // 下载共 Uint8Array
     var totalSize = 0;
     for (var i = 0; i < state.dlChunks.length; i++) {
       totalSize += state.dlChunks[i].data.length;
@@ -2296,10 +2296,10 @@ function mergeAndSave() {
     var dur = state.dlStartTime ? Math.round((Date.now() - state.dlStartTime) / 1000) : 0;
     var min = Math.floor(dur / 60), sec = dur % 60;
     var sizeMB = (totalSize / 1048576).toFixed(1);
-    showToast("锟窖憋拷第(" + sizeMB + "MB): " + a.download + " (" + min + "第" + sec + "第)", "success");
+    showToast("下载完成(" + sizeMB + "MB): " + a.download + " (" + min + "第" + sec + "第)", "success");
   } catch(e) {
     console.error("[MyTV] Merge failed:", e);
-    showToast("锟较诧拷第片失第: " + e.message, "error");
+    showToast("下载片失败: " + e.message, "error");
   }
 }
 
@@ -2360,7 +2360,9 @@ function restoreLastChannel() {
       var gi = -1;
       for (var i = 0; i < state.groups.length; i++) { if (state.groups[i].channels.indexOf(ch) !== -1) { gi = i; break; } }
       if (gi !== -1) { state.curGroupIdx = gi; renderGroupNav(); }
-      setTimeout(function() { playChannelByGlobalIdx(idx); }, 300);
+      var lastLi = parseInt(localStorage.getItem("mytv_lastli") || "0", 10);
+      if (isNaN(lastLi) || lastLi < 0 || lastLi >= ch.urls.length) lastLi = 0;
+      setTimeout(function() { playLineByGlobalIdx(idx, lastLi); }, 300);
     }
   } catch(e) {}
 }
@@ -2391,13 +2393,13 @@ function getCodecLabel(codec) {
   if (c.indexOf("vp8") >= 0 || c.indexOf("vp08") >= 0) return "VP8";
   // MPEG-4 Visual
   if (c.indexOf("mp4v") >= 0) return "MP4V";
-  // 第取前8锟街凤拷重试
+  // 获取前8字节重试
   return codec.substring(0, 10);
 }
 
 /* 编码兼容性检测 */
 function isCodecSupported(codec) {
-  if (!codec || typeof MediaSource === "undefined" || !MediaSource.isTypeSupported) return null; // 锟睫凤拷锟叫讹拷
+  if (!codec || typeof MediaSource === "undefined" || !MediaSource.isTypeSupported) return null; // 支持解析
   // 重试模第MIME检测
   var mimes = [
     'video/mp4; codecs="' + codec + '"',
@@ -2432,11 +2434,13 @@ $("settings-panel").addEventListener("click", function(e) { if (e.target === thi
 /* ---------- 初始化 ---------- */
 loadConfig(); loadFavorites(); loadVolume();
 
-/* ---------- 自动加载上次URL ---------- */
+/* ---------- 自动加载上次URL并播放 ---------- */
 (function() {
   var lastUrl = localStorage.getItem("mytv_lasturl");
-  if (state.cfg.url && !lastUrl) {
-    $("url-input").value = state.cfg.url;
+  var targetUrl = lastUrl || state.cfg.url;
+  if (targetUrl) {
+    $("url-input").value = targetUrl;
+    setTimeout(function() { loadFromUrl(); }, 400);
   }
 })();
 
@@ -2457,17 +2461,17 @@ loadConfig(); loadFavorites(); loadVolume();
 (function() {
   if (window.matchMedia("(max-width: 768px)").matches) {
     $("main").classList.add("sidebar-hidden");
-    $("sidebar-toggle-bar").title = "展个频道第";
+    $("sidebar-toggle-bar").title = "展开频道列表";
   }
-  // 播放中锟叫伙拷时重试状态
+  // 播放中切换时重试状态
   window.addEventListener("resize", function() {
     var m = $("main"); var b = $("sidebar-toggle-bar");
-    m.classList.remove("sidebar-visible"); // 锟藉覆第态
+    m.classList.remove("sidebar-visible"); // 收起状态
     if (window.matchMedia("(max-width: 768px)").matches) {
-      if (!m.classList.contains("sidebar-hidden")) { m.classList.add("sidebar-hidden"); b.title = "展个频道第"; }
+      if (!m.classList.contains("sidebar-hidden")) { m.classList.add("sidebar-hidden"); b.title = "展开频道列表"; }
     } else {
       m.classList.remove("sidebar-hidden");
-      b.title = "第个频道第";
+      b.title = "隐藏频道列表";
     }
   });
 })();
@@ -2479,20 +2483,20 @@ function toggleSidebar() {
   var isMobile = window.matchMedia("(max-width: 768px)").matches;
 
   if (isMobile) {
-    // 锟狡讹拷锟剿ｏ拷重试模式第共 sidebar-visible
+    // 左侧隐藏重试模式第共 sidebar-visible
     var visible = main.classList.toggle("sidebar-visible");
     if (visible) {
       main.classList.remove("sidebar-hidden");
-      bar.title = "第个频道第";
+      bar.title = "隐藏频道列表";
     } else {
       main.classList.add("sidebar-hidden");
-      bar.title = "展个频道第";
+      bar.title = "展开频道列表";
     }
   } else {
     // 重试耍播放中第示/重试
     main.classList.toggle("sidebar-hidden");
-    if (main.classList.contains("sidebar-hidden")) { bar.title = "展个频道第"; }
-    else { bar.title = "第个频道第"; }
+    if (main.classList.contains("sidebar-hidden")) { bar.title = "展开频道列表"; }
+    else { bar.title = "隐藏频道列表"; }
   }
 }
 
