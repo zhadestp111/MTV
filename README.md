@@ -25,7 +25,8 @@
 ## 快速开始
 
 ### Windows
-双击 `start.bat` 一键启动代理服务并打开播放器。
+
+双击 `HTML` 一键启动。
 
 ### 手动启动
 ```bash
@@ -43,6 +44,3 @@ python proxy-server.py
 | `proxy-server.py` | Python 本地 CORS 代理（零依赖） |
 | `start.bat` | Windows 一键启动脚本 |
 
-## 参考
-
-基于 [yaoxieyoulei/mytv-android](https://github.com/yaoxieyoulei/mytv-android) 设计理念创建。
